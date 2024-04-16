@@ -9,10 +9,10 @@
 #include <iphlpapi.h>
 
 int main(){
+
+    //Initializes the Winsock library for network communication.
     int initialisation_result;
     WSADATA wsa_data;
-
-    // Initialization
 
     initialisation_result = WSAStartup(MAKEWORD(2, 2), &wsa_data);
     if (initialisation_result != 0) {
