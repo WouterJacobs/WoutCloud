@@ -84,7 +84,7 @@ int main(){
     }
 
     /*
-     * Server loop
+     * Server loop.
      */
     SOCKET client_socket;
     // Accept a single client socket!
@@ -102,7 +102,6 @@ int main(){
     int init_send_result;
     int recv_buflen = DEFAULT_BUFLEN;
 
-    // Receive until the peer shuts down the connection
     do {
         initialisation_result = recv(client_socket, recv_buf, recv_buflen, 0);
         if (initialisation_result > 0) {
@@ -128,7 +127,20 @@ int main(){
 
     } while (initialisation_result > 0);
 
+    /*
+     * Shutting down the server.
+     */
+    initialisation_result = shutdown(client_socket, SD_SEND);
+    if (initialisation_result == SOCKET_ERROR) {
+        printf("shutdown failed with error: %d\n", WSAGetLastError());
+        closesocket(client_socket);
+        WSACleanup();
+        return 1;
+    }
 
+    // Memory cleanup
+    closesocket(client_socket);
+    WSACleanup();
 
     printf("server successfully shut down");
     return 0;
