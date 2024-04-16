@@ -83,6 +83,21 @@ int main(){
         printf("Socket successfully listening\n");
     }
 
+    /*
+     * Server loop
+     */
+    SOCKET client_socket;
+    // Accept a single client socket!
+    client_socket = accept(listening_socket, NULL, NULL);
+    if (client_socket == INVALID_SOCKET) {
+        printf("accept failed: %d\n", WSAGetLastError());
+        closesocket(listening_socket);
+        WSACleanup();
+        return 1;
+    }else{
+        printf("Successfully accepted client connection\n");
+    }
+
 
     printf("server successfully shut down");
     return 0;
