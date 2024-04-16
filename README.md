@@ -55,4 +55,4 @@ cmake -G "Unix Makefiles" .
 
 Once you've chosen the appropriate generator, run the build command specific to your system (e.g., `cmake --build .` for most). Refer to CMake documentation or your IDE's instructions for the exact build command.
 
-**2. Manual Build (alternative):**
+**2. Manual Build (alternative)**
