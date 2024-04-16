@@ -26,7 +26,7 @@ int main(){
 
 
     /*
-     * Creation of Sockets.
+     * Creation, binding and listening of Sockets.
      * using: - ipv4
      *        - TCP protocol
      * Port = 8081
@@ -48,9 +48,9 @@ int main(){
         printf("Adress init succesfull\n");
     }
 
-    SOCKET ListeningSocket;
-    ListeningSocket = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
-    if (ListeningSocket == INVALID_SOCKET) {
+    SOCKET listening_socket;
+    listening_socket = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
+    if (listening_socket == INVALID_SOCKET) {
         printf("Error at socket(): %ld\n", WSAGetLastError());
         freeaddrinfo(result);
         WSACleanup();
@@ -60,5 +60,30 @@ int main(){
     }
 
 
+    initialisation_result = bind(listening_socket, result->ai_addr, (int)result->ai_addrlen);
+    if (initialisation_result == SOCKET_ERROR) {
+        printf("bind failed with error: %d\n", WSAGetLastError());
+        freeaddrinfo(result);
+        closesocket(listening_socket);
+        WSACleanup();
+        return 1;
+    }else{
+        printf("Binding socket to address and port succesfull\n");
+    }
+
+    freeaddrinfo(result);
+
+    initialisation_result = listen(listening_socket, SOMAXCONN);
+    if (initialisation_result == SOCKET_ERROR) {
+        printf("listen failed with error: %d\n", WSAGetLastError());
+        closesocket(listening_socket);
+        WSACleanup();
+        return 1;
+    }else{
+        printf("Socket successfully listening\n");
+    }
+
+
+    printf("server successfully shut down");
     return 0;
 }
