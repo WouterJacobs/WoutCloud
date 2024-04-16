@@ -26,7 +26,7 @@ int main(){
 
 
     /*
-     * Creation of Sockets.
+     * Creation, binding and listening of Sockets.
      * using: - ipv4
      *        - TCP protocol
      * Port = 8081
@@ -72,5 +72,18 @@ int main(){
     }
 
     freeaddrinfo(result);
+
+    initialisation_result = listen(listening_socket, SOMAXCONN);
+    if (initialisation_result == SOCKET_ERROR) {
+        printf("listen failed with error: %d\n", WSAGetLastError());
+        closesocket(listening_socket);
+        WSACleanup();
+        return 1;
+    }else{
+        printf("Socket successfully listening\n");
+    }
+
+
+    printf("server successfully shut down");
     return 0;
 }
