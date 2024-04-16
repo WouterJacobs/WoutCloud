@@ -21,7 +21,7 @@ int main(){
         printf("WSAStartup failed: %d\n", initialisation_result);
         return 1;
     }else{
-        printf("Winsock2 init succesfull\n");
+        printf("Winsock2 init successful\n");
     }
 
 
@@ -31,7 +31,7 @@ int main(){
      *        - TCP protocol
      * Port = 8081
      */
-    struct addrinfo *result = NULL, *poiter = NULL, hints;
+    struct addrinfo *result = NULL, *pointer = NULL, hints;
 
     ZeroMemory(&hints, sizeof (hints));
     hints.ai_family = AF_INET;
@@ -45,7 +45,7 @@ int main(){
         WSACleanup();
         return 1;
     }else{
-        printf("Adress init succesfull\n");
+        printf("Address init successful\n");
     }
 
     SOCKET listening_socket;
@@ -56,7 +56,7 @@ int main(){
         WSACleanup();
         return 1;
     }else{
-        printf("Socket init succesfull\n");
+        printf("Socket init successful\n");
     }
 
 
@@ -68,7 +68,7 @@ int main(){
         WSACleanup();
         return 1;
     }else{
-        printf("Binding socket to address and port succesfull\n");
+        printf("Binding socket to address and port successful\n");
     }
 
     freeaddrinfo(result);
