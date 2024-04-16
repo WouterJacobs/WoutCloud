@@ -9,7 +9,7 @@
 #include <iphlpapi.h>
 
 #define DEFAULT_PORT "8081"
-
+#define DEFAULT_BUFLEN 512
 int main(){
 
     //Initializes the Winsock library for network communication.
@@ -97,6 +97,37 @@ int main(){
     }else{
         printf("Successfully accepted client connection\n");
     }
+
+    char recv_buf[DEFAULT_BUFLEN];
+    int init_send_result;
+    int recv_buflen = DEFAULT_BUFLEN;
+
+    // Receive until the peer shuts down the connection
+    do {
+        initialisation_result = recv(client_socket, recv_buf, recv_buflen, 0);
+        if (initialisation_result > 0) {
+            printf("Bytes received: %d\n", initialisation_result);
+
+            // Echo the buffer back to the sender
+            init_send_result = send(client_socket, recv_buf, initialisation_result, 0);
+            if (init_send_result == SOCKET_ERROR) {
+                printf("send failed: %d\n", WSAGetLastError());
+                closesocket(client_socket);
+                WSACleanup();
+                return 1;
+            }
+            printf("Bytes sent: %d\n", init_send_result);
+        } else if (initialisation_result == 0)
+            printf("Connection closing...\n");
+        else {
+            printf("recv failed: %d\n", WSAGetLastError());
+            closesocket(client_socket);
+            WSACleanup();
+            return 1;
+        }
+
+    } while (initialisation_result > 0);
+
 
 
     printf("server successfully shut down");
