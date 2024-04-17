@@ -110,7 +110,10 @@ int main(){
         action_result = recv(client_socket, recv_buf, recv_buflen, 0);
         if (action_result > 0) {
             printf("Bytes received: %d\n", action_result);
-            bytes_sent = send(client_socket, recv_buf, action_result, 0);
+            printf("Message: %s", recv_buf);
+
+            const char *hello_string = "Hello to you too Client, this is WoutCloud speaking\n";
+            bytes_sent = send(client_socket, hello_string, (int)strlen(hello_string) + 1, 0);
 
             if (bytes_sent == SOCKET_ERROR) {
                 printf("send failed: %d\n", WSAGetLastError());
