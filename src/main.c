@@ -3,14 +3,6 @@
 */
 
 #include "main.h"
-#include <stdio.h>
-#include <winsock2.h>
-#include <windows.h>
-#include <ws2tcpip.h>
-#include <iphlpapi.h>
-
-#define DEFAULT_PORT "8081"
-#define DEFAULT_BUFLEN 512
 
 int main(){
 
@@ -22,43 +14,26 @@ int main(){
      *        - TCP protocol
      * Port = 8081
      */
-    struct addrinfo *address_info = NULL;
-    struct addrinfo *address_info_pointer = NULL;
-    struct addrinfo address_info_blueprint;
-
-    ZeroMemory(&address_info_blueprint, sizeof (address_info_blueprint));
-    {
-        address_info_blueprint.ai_family = AF_INET;
-        address_info_blueprint.ai_socktype = SOCK_STREAM;
-        address_info_blueprint.ai_protocol = IPPROTO_TCP;
-        address_info_blueprint.ai_flags = AI_PASSIVE;
-    }
-    int action_result;
-    action_result = getaddrinfo(NULL, DEFAULT_PORT, &address_info_blueprint, &address_info);
-    if (action_result != 0) {
-        printf("getaddrinfo failed: %d\n", action_result);
-        WSACleanup();
-        return 1;
-    }else{
-        printf("Address init successful\n");
-    }
+    struct addrinfo address_info;
+    struct addrinfo *address_info_pointer = &address_info;
+    if(!setAddressInfo(&address_info_pointer)) return 1;
 
     SOCKET listening_socket;
-    listening_socket = socket(address_info->ai_family, address_info->ai_socktype, address_info->ai_protocol);
+    listening_socket = socket(address_info_pointer->ai_family, address_info_pointer->ai_socktype, address_info_pointer->ai_protocol);
     if (listening_socket == INVALID_SOCKET) {
         printf("Error at socket(): %ld\n", WSAGetLastError());
-        freeaddrinfo(address_info);
+        freeaddrinfo(address_info_pointer);
         WSACleanup();
         return 1;
     }else{
         printf("Socket init successful\n");
     }
 
-
-    action_result = bind(listening_socket, address_info->ai_addr, (int)address_info->ai_addrlen);
+    int action_result;
+    action_result = bind(listening_socket, address_info_pointer->ai_addr, (int)address_info_pointer->ai_addrlen);
     if (action_result == SOCKET_ERROR) {
         printf("bind failed with error: %d\n", WSAGetLastError());
-        freeaddrinfo(address_info);
+        freeaddrinfo(address_info_pointer);
         closesocket(listening_socket);
         WSACleanup();
         return 1;
@@ -66,7 +41,7 @@ int main(){
         printf("Binding socket to address and port successful\n");
     }
 
-    freeaddrinfo(address_info);
+    freeaddrinfo(address_info_pointer);
 
     action_result = listen(listening_socket, SOMAXCONN);
     if (action_result == SOCKET_ERROR) {
@@ -154,4 +129,24 @@ int initialize_winsock(){
     printf("Winsock2 init successful\n");
     return 1;
 
+}
+int setAddressInfo(struct addrinfo **address_info_pointer) {
+    struct addrinfo hints;
+    ZeroMemory(&hints, sizeof(hints));
+
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_protocol = IPPROTO_TCP;
+    hints.ai_flags = AI_PASSIVE;
+
+    int action_result;
+    action_result = getaddrinfo(NULL, DEFAULT_PORT, &hints, address_info_pointer);
+    if (action_result != 0) {
+        printf("getaddrinfo failed: %d\n", action_result);
+        WSACleanup();
+        return 0;
+    }
+
+    printf("Address init successful\n");
+    return 1;
 }
