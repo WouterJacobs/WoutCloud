@@ -2,6 +2,7 @@
 // Created by Wouter Jacobs.
 */
 
+#include "main.h"
 #include <stdio.h>
 #include <winsock2.h>
 #include <windows.h>
@@ -10,20 +11,10 @@
 
 #define DEFAULT_PORT "8081"
 #define DEFAULT_BUFLEN 512
+
 int main(){
 
-    //Initializes the Winsock library for network communication.
-    int action_result;
-    WSADATA wsa_data;
-
-    action_result = WSAStartup(MAKEWORD(2, 2), &wsa_data);
-    if (action_result != 0) {
-        printf("WSAStartup failed: %d\n", action_result);
-        return 1;
-    }else{
-        printf("Winsock2 init successful\n");
-    }
-
+    if(!initialize_winsock())return 1;
 
     /*
      * Creation, binding and listening of Sockets.
@@ -42,7 +33,7 @@ int main(){
         address_info_blueprint.ai_protocol = IPPROTO_TCP;
         address_info_blueprint.ai_flags = AI_PASSIVE;
     }
-
+    int action_result;
     action_result = getaddrinfo(NULL, DEFAULT_PORT, &address_info_blueprint, &address_info);
     if (action_result != 0) {
         printf("getaddrinfo failed: %d\n", action_result);
@@ -150,4 +141,17 @@ int main(){
 
     printf("server successfully shut down");
     return 0;
+}
+
+int initialize_winsock(){
+    WSADATA wsa_data;
+    int WSAStartup_result;
+    WSAStartup_result = WSAStartup(MAKEWORD(2, 2), &wsa_data);
+    if (WSAStartup_result != 0) {
+        printf("WSAStartup failed: %d\n", WSAStartup_result);
+        return 0;
+    }
+    printf("Winsock2 init successful\n");
+    return 1;
+
 }

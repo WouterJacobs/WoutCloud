@@ -5,4 +5,7 @@
 #ifndef WOUTCLOUD_MAIN_H
 #define WOUTCLOUD_MAIN_H
 
+int initialize_winsock();
+
+
 #endif //WOUTCLOUD_MAIN_H

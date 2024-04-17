@@ -5,11 +5,13 @@ project(WoutCloud C)
 set(CMAKE_C_STANDARD 11)
 
 # Source files for both server and client
-set(SERVER_SOURCES src/main.c)
+set(SERVER_SOURCES src/main.c
+        src/main.h)
 set(CLIENT_SOURCES src/Client.c)  # Assuming Client.c is in the src directory
 
 # Add server executable
-add_executable(WoutCloud ${SERVER_SOURCES})
+add_executable(WoutCloud ${SERVER_SOURCES}
+        src/main.h)
 
 # Target linkage for server (assuming Winsock)
 target_link_libraries(WoutCloud ws2_32)
