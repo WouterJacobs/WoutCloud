@@ -19,5 +19,6 @@ int initialize_winsock();
 int setAddressInfo(struct addrinfo **address_info_pointer);
 SOCKET createSocket(struct addrinfo *address_info);
 int bindSocket(SOCKET listening_socket, struct addrinfo *address_info);
+int setSocketToListen(SOCKET listening_socket);
 
 #endif //WOUTCLOUD_MAIN_H

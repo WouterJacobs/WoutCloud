@@ -5,6 +5,7 @@
 #include "main.h"
 
 int main(){
+    int action_result;
 
     if(!initialize_winsock())return 1;
 
@@ -25,18 +26,7 @@ int main(){
 
     freeaddrinfo(address_info_pointer);
 
-
-
-    int action_result;
-    action_result = listen(listening_socket, SOMAXCONN);
-    if (action_result == SOCKET_ERROR) {
-        printf("listen failed with error: %d\n", WSAGetLastError());
-        closesocket(listening_socket);
-        WSACleanup();
-        return 1;
-    }else{
-        printf("Socket successfully listening\n");
-    }
+    if (!setSocketToListen(listening_socket)) return 1;
 
     /*
      * Server loop.
@@ -115,6 +105,7 @@ int initialize_winsock(){
     return 1;
 
 }
+
 int setAddressInfo(struct addrinfo **address_info_pointer) {
     struct addrinfo hints;
     ZeroMemory(&hints, sizeof(hints));
@@ -135,6 +126,7 @@ int setAddressInfo(struct addrinfo **address_info_pointer) {
     printf("Address init successful\n");
     return 1;
 }
+
 SOCKET createSocket(struct addrinfo *address_info) {
     SOCKET listening_socket;
     listening_socket = socket(address_info->ai_family, address_info->ai_socktype, address_info->ai_protocol);
@@ -159,4 +151,17 @@ int bindSocket(SOCKET listening_socket, struct addrinfo *address_info) {
         printf("Binding socket to address and port successful\n");
         return 1;
     }
+}
+
+int setSocketToListen(SOCKET listening_socket){
+    int action_result;
+    action_result = listen(listening_socket, SOMAXCONN);
+    if (action_result == SOCKET_ERROR) {
+        printf("listen failed with error: %d\n", WSAGetLastError());
+        closesocket(listening_socket);
+        WSACleanup();
+        return 0;
+    }
+    printf("Socket successfully listening\n");
+    return 1;
 }
