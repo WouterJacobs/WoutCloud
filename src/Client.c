@@ -73,7 +73,9 @@ int main(int argc, char **argv)
     }
 
     // Send an initial buffer
-    iResult = send( ConnectSocket, recvbuf, (int)strlen(recvbuf), 0 );
+    const char *hello_string = "Hello WoutCloud, this is client speaking\n";
+    iResult = send( ConnectSocket, hello_string, (int)strlen(hello_string) + 1, 0 );
+
     if (iResult == SOCKET_ERROR) {
         printf("send failed with error: %d\n", WSAGetLastError());
         closesocket(ConnectSocket);
@@ -83,7 +85,7 @@ int main(int argc, char **argv)
 
     printf("Bytes Sent: %ld\n", iResult);
 
-    // shutdown the connection since no more data will be sent
+    // shutdown the connection since no more data will be sent !is temporary!
     iResult = shutdown(ConnectSocket, SD_SEND);
     if (iResult == SOCKET_ERROR) {
         printf("shutdown failed with error: %d\n", WSAGetLastError());
@@ -98,6 +100,8 @@ int main(int argc, char **argv)
         iResult = recv(ConnectSocket, recvbuf, recvbuflen, 0);
         if ( iResult > 0 ){
             printf("Bytes received: %d\n", iResult);
+            printf("Message: %s", recvbuf);
+
         }
         else if ( iResult == 0 )
             printf("Connection closed\n");
