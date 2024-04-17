@@ -18,31 +18,16 @@ int main(){
     struct addrinfo *address_info_pointer = &address_info;
     if(!setAddressInfo(&address_info_pointer)) return 1;
 
-    SOCKET listening_socket;
-    listening_socket = socket(address_info_pointer->ai_family, address_info_pointer->ai_socktype, address_info_pointer->ai_protocol);
-    if (listening_socket == INVALID_SOCKET) {
-        printf("Error at socket(): %ld\n", WSAGetLastError());
-        freeaddrinfo(address_info_pointer);
-        WSACleanup();
-        return 1;
-    }else{
-        printf("Socket init successful\n");
-    }
+    SOCKET listening_socket = createSocket(address_info_pointer);
+    if (listening_socket == INVALID_SOCKET) return 1;
 
-    int action_result;
-    action_result = bind(listening_socket, address_info_pointer->ai_addr, (int)address_info_pointer->ai_addrlen);
-    if (action_result == SOCKET_ERROR) {
-        printf("bind failed with error: %d\n", WSAGetLastError());
-        freeaddrinfo(address_info_pointer);
-        closesocket(listening_socket);
-        WSACleanup();
-        return 1;
-    }else{
-        printf("Binding socket to address and port successful\n");
-    }
+    if (!bindSocket(listening_socket, address_info_pointer))return 1;
 
     freeaddrinfo(address_info_pointer);
 
+
+
+    int action_result;
     action_result = listen(listening_socket, SOMAXCONN);
     if (action_result == SOCKET_ERROR) {
         printf("listen failed with error: %d\n", WSAGetLastError());
@@ -149,4 +134,29 @@ int setAddressInfo(struct addrinfo **address_info_pointer) {
 
     printf("Address init successful\n");
     return 1;
+}
+SOCKET createSocket(struct addrinfo *address_info) {
+    SOCKET listening_socket;
+    listening_socket = socket(address_info->ai_family, address_info->ai_socktype, address_info->ai_protocol);
+    if (listening_socket == INVALID_SOCKET) {
+        printf("Error at socket(): %ld\n", WSAGetLastError());
+        freeaddrinfo(address_info);
+        WSACleanup();
+        return INVALID_SOCKET;
+    }
+    printf("Socket init successful\n");
+    return listening_socket;
+}
+
+int bindSocket(SOCKET listening_socket, struct addrinfo *address_info) {
+    int action_result;
+    action_result = bind(listening_socket, address_info->ai_addr, (int)address_info->ai_addrlen);
+    if (action_result == SOCKET_ERROR) {
+        printf("bind failed with error: %d\n", WSAGetLastError());
+        closesocket(listening_socket);
+        return 0;
+    } else {
+        printf("Binding socket to address and port successful\n");
+        return 1;
+    }
 }
