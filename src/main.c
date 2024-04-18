@@ -4,10 +4,10 @@
 
 #include "main.h"
 
-int main(){
+int main() {
     int action_result;
 
-    if(!initialize_winsock())return 1;
+    if (!initialize_winsock())return 1;
 
     /*
      * Creation, binding and listening of Sockets.
@@ -17,7 +17,7 @@ int main(){
      */
     struct addrinfo address_info;
     struct addrinfo *address_info_pointer = &address_info;
-    if(!setAddressInfo(&address_info_pointer)) return 1;
+    if (!setAddressInfo(&address_info_pointer)) return 1;
 
     SOCKET listening_socket = createSocket(address_info_pointer);
     if (listening_socket == INVALID_SOCKET) return 1;
@@ -35,36 +35,7 @@ int main(){
     SOCKET client_socket;
     if (!acceptClient(listening_socket, &client_socket)) return 1;
 
-    char recv_buf[DEFAULT_BUFLEN];
-    int bytes_sent;
-    int recv_buflen = DEFAULT_BUFLEN;
-
-    do {
-        action_result = recv(client_socket, recv_buf, recv_buflen, 0);
-        if (action_result > 0) {
-            printf("Bytes received: %d\n", action_result);
-            printf("Message: %s", recv_buf);
-
-            const char *hello_string = "Hello to you too Client, this is WoutCloud speaking\n";
-            bytes_sent = send(client_socket, hello_string, (int)strlen(hello_string) + 1, 0);
-
-            if (bytes_sent == SOCKET_ERROR) {
-                printf("send failed: %d\n", WSAGetLastError());
-                closesocket(client_socket);
-                WSACleanup();
-                return 1;
-            }
-            printf("Bytes sent: %d\n", bytes_sent);
-        } else if (action_result == 0)
-            printf("Connection closing...\n");
-        else {
-            printf("recv failed: %d\n", WSAGetLastError());
-            closesocket(client_socket);
-            WSACleanup();
-            return 1;
-        }
-
-    } while (action_result > 0);
+    if (!handleClient(client_socket)) return 1;
 
     /*
      * Shutting down the server.
@@ -85,7 +56,7 @@ int main(){
     return 0;
 }
 
-int initialize_winsock(){
+int initialize_winsock() {
     WSADATA wsa_data;
     int WSAStartup_result;
     WSAStartup_result = WSAStartup(MAKEWORD(2, 2), &wsa_data);
@@ -134,7 +105,7 @@ SOCKET createSocket(struct addrinfo *address_info) {
 
 int bindSocket(SOCKET listening_socket, struct addrinfo *address_info) {
     int action_result;
-    action_result = bind(listening_socket, address_info->ai_addr, (int)address_info->ai_addrlen);
+    action_result = bind(listening_socket, address_info->ai_addr, (int) address_info->ai_addrlen);
     if (action_result == SOCKET_ERROR) {
         printf("bind failed with error: %d\n", WSAGetLastError());
         closesocket(listening_socket);
@@ -145,7 +116,7 @@ int bindSocket(SOCKET listening_socket, struct addrinfo *address_info) {
     }
 }
 
-int setSocketToListen(SOCKET listening_socket){
+int setSocketToListen(SOCKET listening_socket) {
     int action_result;
     action_result = listen(listening_socket, SOMAXCONN);
     if (action_result == SOCKET_ERROR) {
@@ -158,7 +129,7 @@ int setSocketToListen(SOCKET listening_socket){
     return 1;
 }
 
-int acceptClient(SOCKET listening_socket, SOCKET *client_socket){
+int acceptClient(SOCKET listening_socket, SOCKET *client_socket) {
     // Accepts a single client socket!
     *client_socket = accept(listening_socket, NULL, NULL);
     if ((SOCKET) client_socket == INVALID_SOCKET) {
@@ -169,4 +140,38 @@ int acceptClient(SOCKET listening_socket, SOCKET *client_socket){
     }
     printf("Successfully accepted client connection\n");
     return 1;
+}
+
+int handleClient(SOCKET client_socket) {
+    int action_result;
+    char recv_buf[DEFAULT_BUFLEN];
+    int bytes_sent;
+    int recv_buflen = DEFAULT_BUFLEN;
+    char *hello_string = "Hello to you too Client, this is WoutCloud speaking\n";
+
+    action_result = recv(client_socket, recv_buf, recv_buflen, 0); //receiving
+    bytes_sent = send(client_socket, hello_string, getCorrectBytesToSend(hello_string), 0); //sending
+    if (bytes_sent == SOCKET_ERROR) {
+        printf("send failed: %d\n", WSAGetLastError());
+        closesocket(client_socket);
+        WSACleanup();
+        return 0;
+    } else if (action_result == 0) {
+        printf("Connection closing...\n");
+        return 1;
+    }
+    if (action_result == SOCKET_ERROR) {
+        printf("recv failed: %d\n", WSAGetLastError());
+        closesocket(client_socket);
+        WSACleanup();
+        return 0;
+    } else {
+        printf("message from client: %s", recv_buf);
+    }
+    return 1;
+}
+
+int getCorrectBytesToSend(char *string) {
+    int extra_byte = 1;
+    return (int) strlen(string) + extra_byte;
 }
