@@ -5,6 +5,9 @@
 #include "main.h"
 
 int main() {
+    hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+
+
     if (!initialize_winsock()) return 1;
 
     /*
@@ -52,6 +55,7 @@ int initialize_winsock() {
 
     WSAStartup_result = WSAStartup(MAKEWORD(2, 2), &wsa_data);
     if (WSAStartup_result != 0) {
+        setTextColorRed(hConsole);
         printf("WSAStartup failed: %d\n", WSAStartup_result);
         return 0;
     }
@@ -71,6 +75,7 @@ int setAddressInfo(struct addrinfo **address_info_pointer) {
 
     action_result = getaddrinfo(NULL, DEFAULT_PORT, &hints, address_info_pointer);
     if (action_result != 0) {
+        setTextColorRed(hConsole);
         printf("getaddrinfo failed: %d\n", action_result);
         WSACleanup();
         return 0;
@@ -84,6 +89,7 @@ SOCKET createSocket(struct addrinfo *address_info) {
 
     listening_socket = socket(address_info->ai_family, address_info->ai_socktype, address_info->ai_protocol);
     if (listening_socket == INVALID_SOCKET) {
+        setTextColorRed(hConsole);
         printf("Error at socket(): %d\n", WSAGetLastError());
         freeaddrinfo(address_info);
         WSACleanup();
@@ -98,6 +104,7 @@ int bindSocket(SOCKET listening_socket, struct addrinfo *address_info) {
 
     action_result = bind(listening_socket, address_info->ai_addr, (int) address_info->ai_addrlen);
     if (action_result == SOCKET_ERROR) {
+        setTextColorRed(hConsole);
         printf("bind failed with error: %d\n", WSAGetLastError());
         closesocket(listening_socket);
         return 0;
@@ -112,6 +119,7 @@ int setSocketToListen(SOCKET listening_socket) {
 
     action_result = listen(listening_socket, SOMAXCONN);
     if (action_result == SOCKET_ERROR) {
+        setTextColorRed(hConsole);
         printf("listen failed with error: %d\n", WSAGetLastError());
         closesocket(listening_socket);
         WSACleanup();
@@ -125,6 +133,7 @@ int acceptClient(SOCKET listening_socket, SOCKET *client_socket) {
     // Accepts a single client socket!
     *client_socket = accept(listening_socket, NULL, NULL);
     if ((SOCKET) client_socket == INVALID_SOCKET) {
+        setTextColorRed(hConsole);
         printf("accept failed: %d\n", WSAGetLastError());
         closesocket(listening_socket);
         WSACleanup();
@@ -145,6 +154,7 @@ int handleClient(SOCKET client_socket) {
     action_result = recv(client_socket, recv_buf, recv_buflen, 0); //receiving
     bytes_sent = send(client_socket, hello_string, getCorrectBytesToSend(hello_string), 0); //sending
     if (bytes_sent == SOCKET_ERROR) {
+        setTextColorRed(hConsole);
         printf("send failed: %d\n", WSAGetLastError());
         closesocket(client_socket);
         WSACleanup();
@@ -154,6 +164,7 @@ int handleClient(SOCKET client_socket) {
         return 1;
     }
     if (action_result == SOCKET_ERROR) {
+        setTextColorRed(hConsole);
         printf("recv failed: %d\n", WSAGetLastError());
         closesocket(client_socket);
         WSACleanup();
@@ -174,6 +185,7 @@ int shutdownSocket(SOCKET client_socket){
 
     action_result = shutdown(client_socket, SD_SEND);
     if (action_result == SOCKET_ERROR) {
+        setTextColorRed(hConsole);
         printf("shutting down of socket failed with error: %d\n", WSAGetLastError());
         closesocket(client_socket);
         WSACleanup();
@@ -181,6 +193,7 @@ int shutdownSocket(SOCKET client_socket){
     }
     action_result = closesocket(client_socket);
     if (action_result == SOCKET_ERROR) {
+        setTextColorRed(hConsole);
         printf("closing of socket failed with error: %d\n", WSAGetLastError());
         closesocket(client_socket);
         WSACleanup();
@@ -190,3 +203,9 @@ int shutdownSocket(SOCKET client_socket){
     return 1;
 }
 
+void setTextColorRed(HANDLE hconsole){
+    SetConsoleTextAttribute(hconsole,FOREGROUND_RED);
+}
+void resetTextColor(HANDLE hconsole){
+    SetConsoleTextAttribute(hconsole, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+}
