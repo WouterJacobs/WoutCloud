@@ -5,8 +5,6 @@
 #include "main.h"
 
 int main() {
-    int action_result;
-
     if (!initialize_winsock())return 1;
 
     /*
@@ -40,18 +38,10 @@ int main() {
     /*
      * Shutting down the server.
      */
-    action_result = shutdown(client_socket, SD_SEND);
-    if (action_result == SOCKET_ERROR) {
-        printf("shutdown failed with error: %d\n", WSAGetLastError());
-        closesocket(client_socket);
-        WSACleanup();
-        return 1;
-    }
+    if(!shutdownSocket(client_socket)) return 1;
 
     // Memory cleanup
-    closesocket(client_socket);
     WSACleanup();
-
     printf("server successfully shut down");
     return 0;
 }
@@ -143,6 +133,7 @@ int acceptClient(SOCKET listening_socket, SOCKET *client_socket) {
 }
 
 int handleClient(SOCKET client_socket) {
+    //TODO make multithreading for incoming and outgoing messages. Split this function.
     int action_result;
     char recv_buf[DEFAULT_BUFLEN];
     int bytes_sent;
@@ -175,3 +166,23 @@ int getCorrectBytesToSend(char *string) {
     int extra_byte = 1;
     return (int) strlen(string) + extra_byte;
 }
+
+int shutdownSocket(SOCKET client_socket){
+    int action_result = shutdown(client_socket, SD_SEND);
+    if (action_result == SOCKET_ERROR) {
+        printf("shutting down of socket failed with error: %d\n", WSAGetLastError());
+        closesocket(client_socket);
+        WSACleanup();
+        return 0;
+    }
+    action_result = closesocket(client_socket);
+    if (action_result == SOCKET_ERROR) {
+        printf("closing of socket failed with error: %d\n", WSAGetLastError());
+        closesocket(client_socket);
+        WSACleanup();
+        return 0;
+    }
+    printf("socket terminated successfully\n");
+    return 1;
+}
+
