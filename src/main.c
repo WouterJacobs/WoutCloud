@@ -6,7 +6,7 @@
 
 int main() {
     hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-
+    setTextColorGreen(hConsole);
 
     if (!initialize_winsock()) return 1;
 
@@ -151,6 +151,8 @@ int handleClient(SOCKET client_socket) {
     int recv_buflen = DEFAULT_BUFLEN;
     char *hello_string = "Hello to you too Client, this is WoutCloud speaking\n";
 
+    resetTextColor(hConsole);
+
     action_result = recv(client_socket, recv_buf, recv_buflen, 0); //receiving
     bytes_sent = send(client_socket, hello_string, getCorrectBytesToSend(hello_string), 0); //sending
     if (bytes_sent == SOCKET_ERROR) {
@@ -172,6 +174,8 @@ int handleClient(SOCKET client_socket) {
     } else {
         printf("message from client: %s", recv_buf);
     }
+    // setting the color back to green after communication is done.
+    setTextColorGreen(hConsole);
     return 1;
 }
 
@@ -205,6 +209,9 @@ int shutdownSocket(SOCKET client_socket){
 
 void setTextColorRed(HANDLE hconsole){
     SetConsoleTextAttribute(hconsole,FOREGROUND_RED);
+}
+void setTextColorGreen(HANDLE hconsole){
+    SetConsoleTextAttribute(hconsole,FOREGROUND_GREEN);
 }
 void resetTextColor(HANDLE hconsole){
     SetConsoleTextAttribute(hconsole, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);

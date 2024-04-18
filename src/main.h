@@ -29,6 +29,7 @@ int shutdownSocket(SOCKET client_socket);
 
 
 void setTextColorRed(HANDLE hconsole);
+void setTextColorGreen(HANDLE hconsole);
 void resetTextColor(HANDLE hconsole);
 
 #endif //WOUTCLOUD_MAIN_H
