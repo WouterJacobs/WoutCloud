@@ -5,7 +5,7 @@
 #include "main.h"
 
 int main() {
-    if (!initialize_winsock())return 1;
+    if (!initialize_winsock()) return 1;
 
     /*
      * Creation, binding and listening of Sockets.
@@ -49,6 +49,7 @@ int main() {
 int initialize_winsock() {
     WSADATA wsa_data;
     int WSAStartup_result;
+
     WSAStartup_result = WSAStartup(MAKEWORD(2, 2), &wsa_data);
     if (WSAStartup_result != 0) {
         printf("WSAStartup failed: %d\n", WSAStartup_result);
@@ -56,10 +57,10 @@ int initialize_winsock() {
     }
     printf("Winsock2 init successful\n");
     return 1;
-
 }
 
 int setAddressInfo(struct addrinfo **address_info_pointer) {
+    int action_result;
     struct addrinfo hints;
     ZeroMemory(&hints, sizeof(hints));
 
@@ -68,20 +69,19 @@ int setAddressInfo(struct addrinfo **address_info_pointer) {
     hints.ai_protocol = IPPROTO_TCP;
     hints.ai_flags = AI_PASSIVE;
 
-    int action_result;
     action_result = getaddrinfo(NULL, DEFAULT_PORT, &hints, address_info_pointer);
     if (action_result != 0) {
         printf("getaddrinfo failed: %d\n", action_result);
         WSACleanup();
         return 0;
     }
-
     printf("Address init successful\n");
     return 1;
 }
 
 SOCKET createSocket(struct addrinfo *address_info) {
     SOCKET listening_socket;
+
     listening_socket = socket(address_info->ai_family, address_info->ai_socktype, address_info->ai_protocol);
     if (listening_socket == INVALID_SOCKET) {
         printf("Error at socket(): %d\n", WSAGetLastError());
@@ -95,6 +95,7 @@ SOCKET createSocket(struct addrinfo *address_info) {
 
 int bindSocket(SOCKET listening_socket, struct addrinfo *address_info) {
     int action_result;
+
     action_result = bind(listening_socket, address_info->ai_addr, (int) address_info->ai_addrlen);
     if (action_result == SOCKET_ERROR) {
         printf("bind failed with error: %d\n", WSAGetLastError());
@@ -108,6 +109,7 @@ int bindSocket(SOCKET listening_socket, struct addrinfo *address_info) {
 
 int setSocketToListen(SOCKET listening_socket) {
     int action_result;
+
     action_result = listen(listening_socket, SOMAXCONN);
     if (action_result == SOCKET_ERROR) {
         printf("listen failed with error: %d\n", WSAGetLastError());
@@ -168,7 +170,9 @@ int getCorrectBytesToSend(char *string) {
 }
 
 int shutdownSocket(SOCKET client_socket){
-    int action_result = shutdown(client_socket, SD_SEND);
+    int action_result;
+
+    action_result = shutdown(client_socket, SD_SEND);
     if (action_result == SOCKET_ERROR) {
         printf("shutting down of socket failed with error: %d\n", WSAGetLastError());
         closesocket(client_socket);
