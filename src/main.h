@@ -27,9 +27,9 @@ int handleClient(SOCKET client_socket);
 int getCorrectBytesToSend(char* string);
 int shutdownSocket(SOCKET client_socket);
 
-
 void setTextColorRed(HANDLE hconsole);
 void setTextColorGreen(HANDLE hconsole);
+void setTextColorYellow(HANDLE hconsole);
 void resetTextColor(HANDLE hconsole);
 
 #endif //WOUTCLOUD_MAIN_H

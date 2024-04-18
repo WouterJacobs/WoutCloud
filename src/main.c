@@ -125,7 +125,9 @@ int setSocketToListen(SOCKET listening_socket) {
         WSACleanup();
         return 0;
     }
-    printf("Socket successfully listening\n");
+    setTextColorYellow(hConsole);
+    printf("Socket successfully listening...\n");
+    setTextColorGreen(hConsole);
     return 1;
 }
 
@@ -162,7 +164,9 @@ int handleClient(SOCKET client_socket) {
         WSACleanup();
         return 0;
     } else if (action_result == 0) {
+        setTextColorYellow(hConsole);
         printf("Connection closing...\n");
+        setTextColorGreen(hConsole);
         return 1;
     }
     if (action_result == SOCKET_ERROR) {
@@ -212,6 +216,9 @@ void setTextColorRed(HANDLE hconsole){
 }
 void setTextColorGreen(HANDLE hconsole){
     SetConsoleTextAttribute(hconsole,FOREGROUND_GREEN);
+}
+void setTextColorYellow(HANDLE hconsole){
+    SetConsoleTextAttribute(hConsole, FOREGROUND_RED | FOREGROUND_GREEN);
 }
 void resetTextColor(HANDLE hconsole){
     SetConsoleTextAttribute(hconsole, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
