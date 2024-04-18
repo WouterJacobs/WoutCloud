@@ -214,12 +214,15 @@ int shutdownSocket(SOCKET client_socket){
 void setTextColorRed(HANDLE hconsole){
     SetConsoleTextAttribute(hconsole,FOREGROUND_RED);
 }
+
 void setTextColorGreen(HANDLE hconsole){
     SetConsoleTextAttribute(hconsole,FOREGROUND_GREEN);
 }
+
 void setTextColorYellow(HANDLE hconsole){
-    SetConsoleTextAttribute(hConsole, FOREGROUND_RED | FOREGROUND_GREEN);
+    SetConsoleTextAttribute(hconsole, FOREGROUND_RED | FOREGROUND_GREEN);
 }
+
 void resetTextColor(HANDLE hconsole){
     SetConsoleTextAttribute(hconsole, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
 }
