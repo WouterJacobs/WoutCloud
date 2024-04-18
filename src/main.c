@@ -31,17 +31,9 @@ int main(){
     /*
      * Server loop.
      */
+
     SOCKET client_socket;
-    // Accept a single client socket!
-    client_socket = accept(listening_socket, NULL, NULL);
-    if (client_socket == INVALID_SOCKET) {
-        printf("accept failed: %d\n", WSAGetLastError());
-        closesocket(listening_socket);
-        WSACleanup();
-        return 1;
-    }else{
-        printf("Successfully accepted client connection\n");
-    }
+    if (!acceptClient(listening_socket, &client_socket)) return 1;
 
     char recv_buf[DEFAULT_BUFLEN];
     int bytes_sent;
@@ -131,7 +123,7 @@ SOCKET createSocket(struct addrinfo *address_info) {
     SOCKET listening_socket;
     listening_socket = socket(address_info->ai_family, address_info->ai_socktype, address_info->ai_protocol);
     if (listening_socket == INVALID_SOCKET) {
-        printf("Error at socket(): %ld\n", WSAGetLastError());
+        printf("Error at socket(): %d\n", WSAGetLastError());
         freeaddrinfo(address_info);
         WSACleanup();
         return INVALID_SOCKET;
@@ -163,5 +155,18 @@ int setSocketToListen(SOCKET listening_socket){
         return 0;
     }
     printf("Socket successfully listening\n");
+    return 1;
+}
+
+int acceptClient(SOCKET listening_socket, SOCKET *client_socket){
+    // Accepts a single client socket!
+    *client_socket = accept(listening_socket, NULL, NULL);
+    if ((SOCKET) client_socket == INVALID_SOCKET) {
+        printf("accept failed: %d\n", WSAGetLastError());
+        closesocket(listening_socket);
+        WSACleanup();
+        return 0;
+    }
+    printf("Successfully accepted client connection\n");
     return 1;
 }
