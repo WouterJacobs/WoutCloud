@@ -73,7 +73,7 @@ int main(int argc, char **argv)
     }
 
     // Send an initial buffer
-    const char *hello_string = "Hello WoutCloud, this is client speaking\n";
+    const char *hello_string = "Hello WoutCloud, this is client speaking";
     iResult = send( ConnectSocket, hello_string, (int)strlen(hello_string) + 1, 0 );
 
     if (iResult == SOCKET_ERROR) {
@@ -100,7 +100,7 @@ int main(int argc, char **argv)
         iResult = recv(ConnectSocket, recvbuf, recvbuflen, 0);
         if ( iResult > 0 ){
             printf("Bytes received: %d\n", iResult);
-            printf("Message: %s", recvbuf);
+            printf("Message: %s\n", recvbuf);
 
         }
         else if ( iResult == 0 )

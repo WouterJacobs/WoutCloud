@@ -24,6 +24,8 @@ int bindSocket(SOCKET listening_socket, struct addrinfo *address_info);
 int setSocketToListen(SOCKET listening_socket);
 int acceptClient(SOCKET listening_socket, SOCKET *client_socket);
 int handleClient(SOCKET client_socket);
+int handleSendingMessage(SOCKET client_socket);
+int handleIncomingMessage(SOCKET client_socket);
 int getCorrectBytesToSend(char* string);
 int shutdownSocket(SOCKET client_socket);
 

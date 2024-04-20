@@ -34,8 +34,8 @@ int main() {
      */
 
     SOCKET client_socket;
-    if (!acceptClient(listening_socket, &client_socket)) return 1;
 
+    if (!acceptClient(listening_socket, &client_socket)) return 1;
     if (!handleClient(client_socket)) return 1;
 
     /*
@@ -147,39 +147,49 @@ int acceptClient(SOCKET listening_socket, SOCKET *client_socket) {
 
 int handleClient(SOCKET client_socket) {
     //TODO make multithreading for incoming and outgoing messages. Split this function.
-    int action_result;
-    char recv_buf[DEFAULT_BUFLEN];
-    int bytes_sent;
-    int recv_buflen = DEFAULT_BUFLEN;
-    char *hello_string = "Hello to you too Client, this is WoutCloud speaking\n";
-
     resetTextColor(hConsole);
 
-    action_result = recv(client_socket, recv_buf, recv_buflen, 0); //receiving
-    bytes_sent = send(client_socket, hello_string, getCorrectBytesToSend(hello_string), 0); //sending
-    if (bytes_sent == SOCKET_ERROR) {
+    if (!handleIncomingMessage(client_socket)) return 0;
+    if (!handleSendingMessage(client_socket)) return 0;
+
+    // setting the color back to green after communication is done.
+    setTextColorGreen(hConsole);
+    return 1;
+}
+
+int handleSendingMessage(SOCKET client_socket){
+    int send_result;
+    int send_buflen = DEFAULT_BUFLEN;
+    char *hello_string = "Hello to you too Client, this is WoutCloud speaking";
+
+    send_result = send(client_socket, hello_string, send_buflen, 0); //sending
+
+    if (send_result == SOCKET_ERROR) {
         setTextColorRed(hConsole);
         printf("send failed: %d\n", WSAGetLastError());
         closesocket(client_socket);
         WSACleanup();
         return 0;
-    } else if (action_result == 0) {
-        setTextColorYellow(hConsole);
-        printf("Connection closing...\n");
-        setTextColorGreen(hConsole);
-        return 1;
     }
-    if (action_result == SOCKET_ERROR) {
+    printf("You: %s\n", hello_string);
+    return 1;
+}
+
+int handleIncomingMessage(SOCKET client_socket){
+    int recv_result;
+    char recv_buf[DEFAULT_BUFLEN];
+    int recv_buflen = DEFAULT_BUFLEN;
+
+    recv_result = recv(client_socket, recv_buf, recv_buflen, 0); //receiving
+
+    if (recv_result == SOCKET_ERROR) {
         setTextColorRed(hConsole);
         printf("recv failed: %d\n", WSAGetLastError());
         closesocket(client_socket);
         WSACleanup();
         return 0;
-    } else {
-        printf("message from client: %s", recv_buf);
     }
-    // setting the color back to green after communication is done.
-    setTextColorGreen(hConsole);
+    printf("message from client: %s\n", recv_buf);
     return 1;
 }
 
