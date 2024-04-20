@@ -3,6 +3,26 @@
 */
 
 #include "main.h"
+unsigned __stdcall ReceiveMessages(void* socket) {
+    SOCKET ConnectSocket = *((SOCKET*)socket);
+    char recvbuf[DEFAULT_BUFLEN];
+    int recvbuflen = DEFAULT_BUFLEN;
+
+    int iResult;
+    do {
+        iResult = recv(ConnectSocket, recvbuf, recvbuflen, 0);
+        if (iResult > 0) {
+            recvbuf[iResult] = '\0';
+            printf("Client: %s\n", recvbuf);
+        } else if (iResult == 0) {
+            printf("Server closed the connection\n");
+        } else {
+            printf("recv failed with error: %d\n", WSAGetLastError());
+        }
+    } while (iResult > 0);
+
+    return 0;
+}
 
 int main() {
     hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -38,19 +58,24 @@ int main() {
     char message[DEFAULT_BUFLEN];
     if (!acceptClient(listening_socket, &client_socket)) return 1;
     // Receive and send messages
+    HANDLE receiveThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ReceiveMessages, (LPVOID)&client_socket, 0, NULL);    // Main loop for sending messages
     while (1) {
-        if (!handleIncomingMessage(client_socket)) break;
-    // Send response to client
-    printf("Server: ");
-    fgets(message, sizeof(message),stdin);
-    send(client_socket, message, strlen(message), 0);
+        // Send message to server
+        printf("You: ");
+        fgets(message, sizeof(message),stdin);
+        send(client_socket, message, strlen(message), 0);
 
-    // Check if user wants to end the chat
-    if (strcmp(message, "exit") == 0) {
-        printf("Chat ended by user\n");
-        break;
+        // Check if user wants to end the chat
+        if (strcmp(message, "exit") == 0) {
+            printf("Chat ended by user\n");
+            break;
+        }
     }
-    }
+
+    // Wait for the receiving thread to finish
+    WaitForSingleObject(receiveThread, INFINITE);
+
+
 
 //
 //    if (!acceptClient(listening_socket, &client_socket)) return 1;
