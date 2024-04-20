@@ -1,15 +1,12 @@
-#define WIN32_LEAN_AND_MEAN
-
 #include <windows.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
-#include <stdlib.h>
 #include <stdio.h>
 
 #define DEFAULT_BUFLEN 512
 #define DEFAULT_PORT "8081"
 // Function to handle receiving messages from the server
-unsigned __stdcall ReceiveMessages(void* socket) {
+byte ReceiveMessages(void* socket) {
     SOCKET ConnectSocket = *((SOCKET*)socket);
     char recvbuf[DEFAULT_BUFLEN];
     int recvbuflen = DEFAULT_BUFLEN;
@@ -37,10 +34,7 @@ int main(int argc, char **argv)
     struct addrinfo *result = NULL,
             *ptr = NULL,
             hints;
-    const char *sendbuf = "this is a test";
-    char recvbuf[DEFAULT_BUFLEN];
     int iResult;
-    int recvbuflen = DEFAULT_BUFLEN;
 
 
     // Initialize Winsock
@@ -70,7 +64,7 @@ int main(int argc, char **argv)
         ConnectSocket = socket(ptr->ai_family, ptr->ai_socktype,
                                ptr->ai_protocol);
         if (ConnectSocket == INVALID_SOCKET) {
-            printf("socket failed with error: %ld\n", WSAGetLastError());
+            printf("socket failed with error: %d\n", WSAGetLastError());
             WSACleanup();
             return 1;
         }
@@ -106,11 +100,10 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    printf("Bytes Sent: %ld\n", iResult);
+    printf("Bytes Sent: %d\n", iResult);
 
     char message[DEFAULT_BUFLEN];
     // Send and receive messages
-    int recv_size;
     // Create a thread to handle receiving messages
     HANDLE receiveThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ReceiveMessages, (LPVOID)&ConnectSocket, 0, NULL);    // Main loop for sending messages
     while (1) {

@@ -3,26 +3,6 @@
 */
 
 #include "main.h"
-unsigned __stdcall ReceiveMessages(void* socket) {
-    SOCKET ConnectSocket = *((SOCKET*)socket);
-    char recvbuf[DEFAULT_BUFLEN];
-    int recvbuflen = DEFAULT_BUFLEN;
-
-    int iResult;
-    do {
-        iResult = recv(ConnectSocket, recvbuf, recvbuflen, 0);
-        if (iResult > 0) {
-            recvbuf[iResult] = '\0';
-            printf("Client: %s\n", recvbuf);
-        } else if (iResult == 0) {
-            printf("Server closed the connection\n");
-        } else {
-            printf("recv failed with error: %d\n", WSAGetLastError());
-        }
-    } while (iResult > 0);
-
-    return 0;
-}
 
 int main() {
     hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -53,15 +33,13 @@ int main() {
      * Server loop.
      */
 
-
     SOCKET client_socket;
     char message[DEFAULT_BUFLEN];
     if (!acceptClient(listening_socket, &client_socket)) return 1;
     // Receive and send messages
-    HANDLE receiveThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ReceiveMessages, (LPVOID)&client_socket, 0, NULL);    // Main loop for sending messages
+    HANDLE receiveThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE) handleIncomingMessage, &client_socket, 0, NULL);
     while (1) {
-        // Send message to server
-        printf("You: ");
+        printf("\nYou: ");
         fgets(message, sizeof(message),stdin);
         send(client_socket, message, strlen(message), 0);
 
@@ -183,17 +161,17 @@ byte acceptClient(SOCKET listening_socket, SOCKET *client_socket) {
     return 1;
 }
 
-byte handleClient(SOCKET client_socket) {
-    //TODO make multithreading for incoming and outgoing messages. Split this function.
-    resetTextColor(hConsole);
-
-    if (!handleIncomingMessage(client_socket)) return 0;
-    if (!handleSendingMessage(client_socket)) return 0;
-
-    // setting the color back to green after communication is done.
-    setTextColorGreen(hConsole);
-    return 1;
-}
+//byte handleClient(SOCKET client_socket) {
+//    //TODO make multithreading for incoming and outgoing messages. Split this function.
+//    resetTextColor(hConsole);
+//
+//    if (!handleIncomingMessage(client_socket)) return 0;
+//    if (!handleSendingMessage(client_socket)) return 0;
+//
+//    // setting the color back to green after communication is done.
+//    setTextColorGreen(hConsole);
+//    return 1;
+//}
 
 byte handleSendingMessage(SOCKET client_socket){
     int send_result;
@@ -213,22 +191,25 @@ byte handleSendingMessage(SOCKET client_socket){
     return 1;
 }
 
-byte handleIncomingMessage(SOCKET client_socket){
-    int recv_result;
-    char recv_buf[DEFAULT_BUFLEN];
-    int recv_buflen = DEFAULT_BUFLEN;
+byte handleIncomingMessage(void* socket) {
+    SOCKET ConnectSocket = *((SOCKET*)socket);
+    char recvbuf[DEFAULT_BUFLEN];
+    int recvbuflen = DEFAULT_BUFLEN;
 
-    recv_result = recv(client_socket, recv_buf, recv_buflen, 0); //receiving
+    int iResult;
+    do {
+        iResult = recv(ConnectSocket, recvbuf, recvbuflen, 0);
+        if (iResult > 0) {
+            recvbuf[iResult] = '\0';
+            printf("\nClient: %s", recvbuf);
+        } else if (iResult == 0) {
+            printf("Server closed the connection\n");
+        } else {
+            printf("recv failed with error: %d\n", WSAGetLastError());
+        }
+    } while (iResult > 0);
 
-    if (recv_result == SOCKET_ERROR) {
-        setTextColorRed(hConsole);
-        printf("recv failed: %d\n", WSAGetLastError());
-        closesocket(client_socket);
-        WSACleanup();
-        return 0;
-    }
-    printf("message from client: %s\n", recv_buf);
-    return 1;
+    return 0;
 }
 
 int getCorrectBytesToSend(char *string) {
