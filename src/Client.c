@@ -108,15 +108,6 @@ int main(int argc, char **argv)
 
     printf("Bytes Sent: %ld\n", iResult);
 
-    // shutdown the connection since no more data will be sent !is temporary!
-    iResult = shutdown(ConnectSocket, SD_SEND);
-    if (iResult == SOCKET_ERROR) {
-        printf("shutdown failed with error: %d\n", WSAGetLastError());
-        closesocket(ConnectSocket);
-        WSACleanup();
-        return 1;
-    }
-
     char message[DEFAULT_BUFLEN];
     // Send and receive messages
     int recv_size;
