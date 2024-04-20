@@ -17,17 +17,17 @@
 
 HANDLE hConsole;
 
-int initialize_winsock();
-int setAddressInfo(struct addrinfo **address_info_pointer);
+byte initialize_winsock();
+byte setAddressInfo(struct addrinfo **address_info_pointer);
 SOCKET createSocket(struct addrinfo *address_info);
-int bindSocket(SOCKET listening_socket, struct addrinfo *address_info);
-int setSocketToListen(SOCKET listening_socket);
-int acceptClient(SOCKET listening_socket, SOCKET *client_socket);
-int handleClient(SOCKET client_socket);
-int handleSendingMessage(SOCKET client_socket);
-int handleIncomingMessage(SOCKET client_socket);
+byte bindSocket(SOCKET listening_socket, struct addrinfo *address_info);
+byte setSocketToListen(SOCKET listening_socket);
+byte acceptClient(SOCKET listening_socket, SOCKET *client_socket);
+byte handleClient(SOCKET client_socket);
+byte handleSendingMessage(SOCKET client_socket);
+byte handleIncomingMessage(SOCKET client_socket);
 int getCorrectBytesToSend(char* string);
-int shutdownSocket(SOCKET client_socket);
+byte shutdownSocket(SOCKET client_socket);
 
 void setTextColorRed(HANDLE hconsole);
 void setTextColorGreen(HANDLE hconsole);

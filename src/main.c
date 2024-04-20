@@ -49,7 +49,7 @@ int main() {
     return 0;
 }
 
-int initialize_winsock() {
+byte initialize_winsock() {
     WSADATA wsa_data;
     int WSAStartup_result;
 
@@ -63,7 +63,7 @@ int initialize_winsock() {
     return 1;
 }
 
-int setAddressInfo(struct addrinfo **address_info_pointer) {
+byte setAddressInfo(struct addrinfo **address_info_pointer) {
     int action_result;
     struct addrinfo hints;
     ZeroMemory(&hints, sizeof(hints));
@@ -99,7 +99,7 @@ SOCKET createSocket(struct addrinfo *address_info) {
     return listening_socket;
 }
 
-int bindSocket(SOCKET listening_socket, struct addrinfo *address_info) {
+byte bindSocket(SOCKET listening_socket, struct addrinfo *address_info) {
     int action_result;
 
     action_result = bind(listening_socket, address_info->ai_addr, (int) address_info->ai_addrlen);
@@ -114,7 +114,7 @@ int bindSocket(SOCKET listening_socket, struct addrinfo *address_info) {
     }
 }
 
-int setSocketToListen(SOCKET listening_socket) {
+byte setSocketToListen(SOCKET listening_socket) {
     int action_result;
 
     action_result = listen(listening_socket, SOMAXCONN);
@@ -131,7 +131,7 @@ int setSocketToListen(SOCKET listening_socket) {
     return 1;
 }
 
-int acceptClient(SOCKET listening_socket, SOCKET *client_socket) {
+byte acceptClient(SOCKET listening_socket, SOCKET *client_socket) {
     // Accepts a single client socket!
     *client_socket = accept(listening_socket, NULL, NULL);
     if ((SOCKET) client_socket == INVALID_SOCKET) {
@@ -145,7 +145,7 @@ int acceptClient(SOCKET listening_socket, SOCKET *client_socket) {
     return 1;
 }
 
-int handleClient(SOCKET client_socket) {
+byte handleClient(SOCKET client_socket) {
     //TODO make multithreading for incoming and outgoing messages. Split this function.
     resetTextColor(hConsole);
 
@@ -157,7 +157,7 @@ int handleClient(SOCKET client_socket) {
     return 1;
 }
 
-int handleSendingMessage(SOCKET client_socket){
+byte handleSendingMessage(SOCKET client_socket){
     int send_result;
     int send_buflen = DEFAULT_BUFLEN;
     char *hello_string = "Hello to you too Client, this is WoutCloud speaking";
@@ -175,7 +175,7 @@ int handleSendingMessage(SOCKET client_socket){
     return 1;
 }
 
-int handleIncomingMessage(SOCKET client_socket){
+byte handleIncomingMessage(SOCKET client_socket){
     int recv_result;
     char recv_buf[DEFAULT_BUFLEN];
     int recv_buflen = DEFAULT_BUFLEN;
@@ -198,7 +198,7 @@ int getCorrectBytesToSend(char *string) {
     return (int) strlen(string) + extra_byte;
 }
 
-int shutdownSocket(SOCKET client_socket){
+byte shutdownSocket(SOCKET client_socket){
     int action_result;
 
     action_result = shutdown(client_socket, SD_SEND);
