@@ -33,10 +33,36 @@ int main() {
      * Server loop.
      */
 
-    SOCKET client_socket;
 
+    SOCKET client_socket;
+    char message[DEFAULT_BUFLEN];
     if (!acceptClient(listening_socket, &client_socket)) return 1;
-    if (!handleClient(client_socket)) return 1;
+    // Receive and send messages
+    while (1) {
+        if (!handleIncomingMessage(client_socket)) break;
+    // Send response to client
+    printf("Server: ");
+    fgets(message, sizeof(message),stdin);
+    send(client_socket, message, strlen(message), 0);
+
+    // Check if user wants to end the chat
+    if (strcmp(message, "exit") == 0) {
+        printf("Chat ended by user\n");
+        break;
+    }
+    }
+
+//
+//    if (!acceptClient(listening_socket, &client_socket)) return 1;
+//    if (!handleClient(client_socket)) return 1;
+//    if (!acceptClient(listening_socket, &client_socket)) return 1;
+//    if (!handleIncomingMessage(client_socket)) return 1;
+//    if (!acceptClient(listening_socket, &client_socket)) return 1;
+//    if (!handleIncomingMessage(client_socket)) return 1;
+//    if (!acceptClient(listening_socket, &client_socket)) return 1;
+//    if (!handleIncomingMessage(client_socket)) return 1;
+//    if (!acceptClient(listening_socket, &client_socket)) return 1;
+//    if (!handleIncomingMessage(client_socket)) return 1;
 
     /*
      * Shutting down the server.
