@@ -1,13 +1,31 @@
-#define WIN32_LEAN_AND_MEAN
-
 #include <windows.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
-#include <stdlib.h>
 #include <stdio.h>
 
 #define DEFAULT_BUFLEN 512
 #define DEFAULT_PORT "8081"
+// Function to handle receiving messages from the server
+byte ReceiveMessages(void* socket) {
+    SOCKET ConnectSocket = *((SOCKET*)socket);
+    char recvbuf[DEFAULT_BUFLEN];
+    int recvbuflen = DEFAULT_BUFLEN;
+
+    int iResult;
+    do {
+        iResult = recv(ConnectSocket, recvbuf, recvbuflen, 0);
+        if (iResult > 0) {
+            recvbuf[iResult] = '\0';
+            printf("Server: %s\n", recvbuf);
+        } else if (iResult == 0) {
+            printf("Server closed the connection\n");
+        } else {
+            printf("recv failed with error: %d\n", WSAGetLastError());
+        }
+    } while (iResult > 0);
+
+    return 0;
+}
 
 int main(int argc, char **argv)
 {
@@ -16,10 +34,7 @@ int main(int argc, char **argv)
     struct addrinfo *result = NULL,
             *ptr = NULL,
             hints;
-    const char *sendbuf = "this is a test";
-    char recvbuf[DEFAULT_BUFLEN];
     int iResult;
-    int recvbuflen = DEFAULT_BUFLEN;
 
 
     // Initialize Winsock
@@ -49,7 +64,7 @@ int main(int argc, char **argv)
         ConnectSocket = socket(ptr->ai_family, ptr->ai_socktype,
                                ptr->ai_protocol);
         if (ConnectSocket == INVALID_SOCKET) {
-            printf("socket failed with error: %ld\n", WSAGetLastError());
+            printf("socket failed with error: %d\n", WSAGetLastError());
             WSACleanup();
             return 1;
         }
@@ -73,7 +88,9 @@ int main(int argc, char **argv)
     }
 
     // Send an initial buffer
-    const char *hello_string = "Hello WoutCloud, this is client speaking\n";
+
+    char *hello_string;
+    hello_string = "Hello WoutCloud, this is client speaking 0";
     iResult = send( ConnectSocket, hello_string, (int)strlen(hello_string) + 1, 0 );
 
     if (iResult == SOCKET_ERROR) {
@@ -83,32 +100,28 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    printf("Bytes Sent: %ld\n", iResult);
+    printf("Bytes Sent: %d\n", iResult);
 
-    // shutdown the connection since no more data will be sent !is temporary!
-    iResult = shutdown(ConnectSocket, SD_SEND);
-    if (iResult == SOCKET_ERROR) {
-        printf("shutdown failed with error: %d\n", WSAGetLastError());
-        closesocket(ConnectSocket);
-        WSACleanup();
-        return 1;
+    char message[DEFAULT_BUFLEN];
+    // Send and receive messages
+    // Create a thread to handle receiving messages
+    HANDLE receiveThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ReceiveMessages, (LPVOID)&ConnectSocket, 0, NULL);    // Main loop for sending messages
+    while (1) {
+        // Send message to server
+        printf("You: ");
+        fgets(message, sizeof(message),stdin);
+        send(ConnectSocket, message, strlen(message), 0);
+
+        // Check if user wants to end the chat
+        if (strcmp(message, "exit") == 0) {
+            printf("Chat ended by user\n");
+            break;
+        }
     }
 
-    // Receive until the peer closes the connection
-    do {
+    // Wait for the receiving thread to finish
+    WaitForSingleObject(receiveThread, INFINITE);
 
-        iResult = recv(ConnectSocket, recvbuf, recvbuflen, 0);
-        if ( iResult > 0 ){
-            printf("Bytes received: %d\n", iResult);
-            printf("Message: %s", recvbuf);
-
-        }
-        else if ( iResult == 0 )
-            printf("Connection closed\n");
-        else
-            printf("recv failed with error: %d\n", WSAGetLastError());
-
-    } while( iResult > 0 );
 
     // cleanup
     closesocket(ConnectSocket);

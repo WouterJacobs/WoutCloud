@@ -34,9 +34,25 @@ int main() {
      */
 
     SOCKET client_socket;
+    char message[DEFAULT_BUFLEN];
     if (!acceptClient(listening_socket, &client_socket)) return 1;
+    // Receive and send messages
+    HANDLE receiveThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE) handleIncomingMessage, &client_socket, 0, NULL);
+    while (1) {
+        printf("\nYou: ");
+        fgets(message, sizeof(message),stdin);
+        send(client_socket, message, strlen(message), 0);
 
-    if (!handleClient(client_socket)) return 1;
+        // Check if user wants to end the chat
+        if (strcmp(message, "exit") == 0) {
+            printf("Chat ended by user\n");
+            break;
+        }
+    }
+
+    // Wait for the receiving thread to finish
+    WaitForSingleObject(receiveThread, INFINITE);
+
 
     /*
      * Shutting down the server.
@@ -49,7 +65,7 @@ int main() {
     return 0;
 }
 
-int initialize_winsock() {
+byte initialize_winsock() {
     WSADATA wsa_data;
     int WSAStartup_result;
 
@@ -63,7 +79,7 @@ int initialize_winsock() {
     return 1;
 }
 
-int setAddressInfo(struct addrinfo **address_info_pointer) {
+byte setAddressInfo(struct addrinfo **address_info_pointer) {
     int action_result;
     struct addrinfo hints;
     ZeroMemory(&hints, sizeof(hints));
@@ -99,7 +115,7 @@ SOCKET createSocket(struct addrinfo *address_info) {
     return listening_socket;
 }
 
-int bindSocket(SOCKET listening_socket, struct addrinfo *address_info) {
+byte bindSocket(SOCKET listening_socket, struct addrinfo *address_info) {
     int action_result;
 
     action_result = bind(listening_socket, address_info->ai_addr, (int) address_info->ai_addrlen);
@@ -114,7 +130,7 @@ int bindSocket(SOCKET listening_socket, struct addrinfo *address_info) {
     }
 }
 
-int setSocketToListen(SOCKET listening_socket) {
+byte setSocketToListen(SOCKET listening_socket) {
     int action_result;
 
     action_result = listen(listening_socket, SOMAXCONN);
@@ -131,7 +147,7 @@ int setSocketToListen(SOCKET listening_socket) {
     return 1;
 }
 
-int acceptClient(SOCKET listening_socket, SOCKET *client_socket) {
+byte acceptClient(SOCKET listening_socket, SOCKET *client_socket) {
     // Accepts a single client socket!
     *client_socket = accept(listening_socket, NULL, NULL);
     if ((SOCKET) client_socket == INVALID_SOCKET) {
@@ -145,42 +161,55 @@ int acceptClient(SOCKET listening_socket, SOCKET *client_socket) {
     return 1;
 }
 
-int handleClient(SOCKET client_socket) {
-    //TODO make multithreading for incoming and outgoing messages. Split this function.
-    int action_result;
-    char recv_buf[DEFAULT_BUFLEN];
-    int bytes_sent;
-    int recv_buflen = DEFAULT_BUFLEN;
-    char *hello_string = "Hello to you too Client, this is WoutCloud speaking\n";
+//byte handleClient(SOCKET client_socket) {
+//    //TODO make multithreading for incoming and outgoing messages. Split this function.
+//    resetTextColor(hConsole);
+//
+//    if (!handleIncomingMessage(client_socket)) return 0;
+//    if (!handleSendingMessage(client_socket)) return 0;
+//
+//    // setting the color back to green after communication is done.
+//    setTextColorGreen(hConsole);
+//    return 1;
+//}
 
-    resetTextColor(hConsole);
+byte handleSendingMessage(SOCKET client_socket){
+    int send_result;
+    int send_buflen = DEFAULT_BUFLEN;
+    char *hello_string = "Hello to you too Client, this is WoutCloud speaking";
 
-    action_result = recv(client_socket, recv_buf, recv_buflen, 0); //receiving
-    bytes_sent = send(client_socket, hello_string, getCorrectBytesToSend(hello_string), 0); //sending
-    if (bytes_sent == SOCKET_ERROR) {
+    send_result = send(client_socket, hello_string, send_buflen, 0); //sending
+
+    if (send_result == SOCKET_ERROR) {
         setTextColorRed(hConsole);
         printf("send failed: %d\n", WSAGetLastError());
         closesocket(client_socket);
         WSACleanup();
         return 0;
-    } else if (action_result == 0) {
-        setTextColorYellow(hConsole);
-        printf("Connection closing...\n");
-        setTextColorGreen(hConsole);
-        return 1;
     }
-    if (action_result == SOCKET_ERROR) {
-        setTextColorRed(hConsole);
-        printf("recv failed: %d\n", WSAGetLastError());
-        closesocket(client_socket);
-        WSACleanup();
-        return 0;
-    } else {
-        printf("message from client: %s", recv_buf);
-    }
-    // setting the color back to green after communication is done.
-    setTextColorGreen(hConsole);
+    printf("You: %s\n", hello_string);
     return 1;
+}
+
+byte handleIncomingMessage(void* socket) {
+    SOCKET ConnectSocket = *((SOCKET*)socket);
+    char recvbuf[DEFAULT_BUFLEN];
+    int recvbuflen = DEFAULT_BUFLEN;
+
+    int iResult;
+    do {
+        iResult = recv(ConnectSocket, recvbuf, recvbuflen, 0);
+        if (iResult > 0) {
+            recvbuf[iResult] = '\0';
+            printf("\nClient: %s", recvbuf);
+        } else if (iResult == 0) {
+            printf("Server closed the connection\n");
+        } else {
+            printf("recv failed with error: %d\n", WSAGetLastError());
+        }
+    } while (iResult > 0);
+
+    return 0;
 }
 
 int getCorrectBytesToSend(char *string) {
@@ -188,7 +217,7 @@ int getCorrectBytesToSend(char *string) {
     return (int) strlen(string) + extra_byte;
 }
 
-int shutdownSocket(SOCKET client_socket){
+byte shutdownSocket(SOCKET client_socket){
     int action_result;
 
     action_result = shutdown(client_socket, SD_SEND);
@@ -214,12 +243,15 @@ int shutdownSocket(SOCKET client_socket){
 void setTextColorRed(HANDLE hconsole){
     SetConsoleTextAttribute(hconsole,FOREGROUND_RED);
 }
+
 void setTextColorGreen(HANDLE hconsole){
     SetConsoleTextAttribute(hconsole,FOREGROUND_GREEN);
 }
+
 void setTextColorYellow(HANDLE hconsole){
-    SetConsoleTextAttribute(hConsole, FOREGROUND_RED | FOREGROUND_GREEN);
+    SetConsoleTextAttribute(hconsole, FOREGROUND_RED | FOREGROUND_GREEN);
 }
+
 void resetTextColor(HANDLE hconsole){
     SetConsoleTextAttribute(hconsole, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
 }
