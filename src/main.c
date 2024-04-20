@@ -76,19 +76,6 @@ int main() {
     WaitForSingleObject(receiveThread, INFINITE);
 
 
-
-//
-//    if (!acceptClient(listening_socket, &client_socket)) return 1;
-//    if (!handleClient(client_socket)) return 1;
-//    if (!acceptClient(listening_socket, &client_socket)) return 1;
-//    if (!handleIncomingMessage(client_socket)) return 1;
-//    if (!acceptClient(listening_socket, &client_socket)) return 1;
-//    if (!handleIncomingMessage(client_socket)) return 1;
-//    if (!acceptClient(listening_socket, &client_socket)) return 1;
-//    if (!handleIncomingMessage(client_socket)) return 1;
-//    if (!acceptClient(listening_socket, &client_socket)) return 1;
-//    if (!handleIncomingMessage(client_socket)) return 1;
-
     /*
      * Shutting down the server.
      */
