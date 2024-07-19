@@ -5,8 +5,7 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 
-#define PORT 8080
-#define BUFFER_SIZE 1024
+#include "main.h"
 
 void error(const char *msg) {
     perror(msg);
@@ -39,7 +38,7 @@ int main() {
     if (listen(server_fd, 3) < 0) {
         error("Listen failed");
     }
-
+//  ##########################################################################################################################
     printf("Server is listening on port %d\n", PORT);
 
     if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0) {
