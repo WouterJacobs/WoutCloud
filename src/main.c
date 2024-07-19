@@ -12,15 +12,26 @@ void error(const char *msg) {
     exit(1);
 }
 
+int createServerSocket(int server_fd )
+{
+    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
+        error("Socket creation failed");
+        return -1;
+    }
+    return server_fd;
+}
+
+
 int main() {
-    int server_fd, new_socket;
+    int server_fd;
+    int new_socket;
     struct sockaddr_in address;
     int addrlen = sizeof(address);
     char buffer[BUFFER_SIZE] = {0};
     const char *welcome = "Welcome to the chat server! Type 'exit' to disconnect.\n";
 
-    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
-        error("Socket failed");
+    if(createServerSocket(server_fd) <= 0){
+        return -1;
     }
 
     int opt = 1;
