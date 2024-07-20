@@ -22,11 +22,8 @@ int main() {
         return -1;
     }
     setSocketOptions(server_fd);
-
-    address.sin_family = AF_INET;
-    address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(PORT);
-
+    setAddressOptions(&address);
+   
     if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
         error("Bind failed");
     }
@@ -87,4 +84,10 @@ void setSocketOptions(int socket) {
     if (setsockopt(socket, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &option, sizeof(option))) {
         error("setsockopt");
     }
+}
+
+void setAddressOptions(struct sockaddr_in* address) {
+    address->sin_family = AF_INET;
+    address->sin_addr.s_addr = INADDR_ANY;
+    address->sin_port = htons(PORT);
 }
