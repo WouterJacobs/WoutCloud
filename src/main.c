@@ -7,21 +7,6 @@
 
 #include "main.h"
 
-void error(const char *msg) {
-    perror(msg);
-    exit(1);
-}
-
-int createServerSocket(int server_fd )
-{
-    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
-        error("Socket creation failed");
-        return -1;
-    }
-    return server_fd;
-}
-
-
 int main() {
     int server_fd;
     int new_socket;
@@ -80,5 +65,19 @@ int main() {
     close(server_fd);
 
     return 0;
+}
+
+void error(const char *msg) {
+    perror(msg);
+    exit(1);
+}
+
+int createServerSocket(int server_fd )
+{
+    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
+        error("Socket creation failed");
+        return -1;
+    }
+    return server_fd;
 }
 
