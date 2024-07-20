@@ -7,6 +7,8 @@
 
 #include "main.h"
 
+
+
 int main() {
     int server_fd;
     int new_socket;
@@ -15,14 +17,12 @@ int main() {
     char buffer[BUFFER_SIZE] = {0};
     const char *welcome = "Welcome to the chat server! Type 'exit' to disconnect.\n";
 
-    if(createServerSocket(server_fd) <= 0){
+    server_fd = createServerSocket(server_fd);
+    if(server_fd <= 0){
         return -1;
     }
+    setSocketOptions(server_fd);
 
-    int opt = 1;
-    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
-        error("setsockopt");
-    }
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
     address.sin_port = htons(PORT);
@@ -82,3 +82,9 @@ int createServerSocket(int server_fd )
     return server_fd;
 }
 
+void setSocketOptions(int socket) {
+    int option = 1;
+    if (setsockopt(socket, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &option, sizeof(option))) {
+        error("setsockopt");
+    }
+}

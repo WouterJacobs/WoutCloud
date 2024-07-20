@@ -7,3 +7,4 @@
 // Methods
 void error(const char *msg);
 int createServerSocket(int server_fd );
+void setSocketOptions(int socket);
