@@ -78,6 +78,7 @@ int createServerSocket(int server_fd )
         error("Socket creation failed");
         return -1;
     }
+    printf("Server socket created...\n");
     return server_fd;
 }
 
