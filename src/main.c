@@ -1,3 +1,4 @@
+#include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,7 +8,11 @@
 
 #include "main.h"
 
-
+void bindAddressToSocket(int server_fd, struct sockaddr_in* address) {
+    if (bind(server_fd, (struct sockaddr*) address, sizeof(*address)) < 0) {
+        error("Bind failed");
+    }
+}
 
 int main() {
     int server_fd;
@@ -21,12 +26,11 @@ int main() {
     if(server_fd <= 0){
         return -1;
     }
+
     setSocketOptions(server_fd);
     setAddressOptions(&address);
-   
-    if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
-        error("Bind failed");
-    }
+    bindAddressToSocket(server_fd, &address);
+
 
     if (listen(server_fd, 3) < 0) {
         error("Listen failed");

@@ -1,7 +1,9 @@
 // Header file for main
 
-// Defenitions
+// Includes
 #include <netinet/in.h>
+
+// Definitions
 #define PORT 8080
 #define BUFFER_SIZE 1024
 

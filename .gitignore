@@ -49,7 +49,8 @@
 modules.order
 Module.symvers
 Mkfile.old
-dkms.confµ
+dkms.conf
 
 # Executable files using gcc
 main-server
+server
