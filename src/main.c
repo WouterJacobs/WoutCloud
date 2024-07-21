@@ -8,12 +8,6 @@
 
 #include "main.h"
 
-void bindAddressToSocket(int server_fd, struct sockaddr_in* address) {
-    if (bind(server_fd, (struct sockaddr*) address, sizeof(*address)) < 0) {
-        error("Bind failed");
-    }
-}
-
 int main() {
     int server_fd;
     int new_socket;
@@ -94,4 +88,10 @@ void setAddressOptions(struct sockaddr_in* address) {
     address->sin_family = AF_INET;
     address->sin_addr.s_addr = INADDR_ANY;
     address->sin_port = htons(PORT);
+}
+
+void bindAddressToSocket(int server_fd, struct sockaddr_in* address) {
+    if (bind(server_fd, (struct sockaddr*) address, sizeof(*address)) < 0) {
+        error("Bind failed");
+    }
 }

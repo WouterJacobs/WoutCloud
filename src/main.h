@@ -12,3 +12,4 @@ void error(const char *msg);
 int createServerSocket(int server_fd );
 void setSocketOptions(int socket);
 void setAddressOptions(struct sockaddr_in* address);
+void bindAddressToSocket(int server_fd, struct sockaddr_in* address);
