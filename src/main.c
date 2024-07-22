@@ -1,6 +1,6 @@
 /*
    Created by Wouter Jacobs.
-   THIS IS THE WINDOWS VERSION OF WOUTCLOUD.
+   THIS IS THE LINUX VERSION OF WOUTCLOUD.
 
    Licensed under: GNU GENERAL PUBLIC LICENSE
                     Version 3, 29 June 2007
