@@ -1,7 +1,9 @@
 /*
    Created by Wouter Jacobs.
    THIS IS THE WINDOWS VERSION OF WOUTCLOUD.
-   Licensed under The MIT-License.
+
+   Licensed under: GNU GENERAL PUBLIC LICENSE
+                    Version 3, 29 June 2007
 */
 
 #include "main.h"
