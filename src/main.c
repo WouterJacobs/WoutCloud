@@ -9,14 +9,9 @@
 
 #include "main.h"
 
-#define MAX_CLIENTS 10
-
 int clients[MAX_CLIENTS];
 int num_clients = 0;
 pthread_mutex_t clients_mutex = PTHREAD_MUTEX_INITIALIZER;
-
-void *handle_client(void *socket_desc);
-void broadcast_message(const char *message, int sender_sock);
 
 int main() {
     int server_fd;
@@ -56,7 +51,7 @@ int main() {
             error("Could not create thread");
         }
 
-        pthread_detach(client_thread); // To automatically reclaim thread resources
+        pthread_detach(client_thread);
     }
 
     close(server_fd);
