@@ -1,5 +1,7 @@
 /*
-// Created by Wouter Jacobs.
+   Created by Wouter Jacobs.
+   THIS IS THE WINDOWS VERSION OF WOUTCLOUD.
+   Licensed under The MIT-License.
 */
 
 #include "main.h"
