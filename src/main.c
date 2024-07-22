@@ -9,7 +9,14 @@
 
 #include "main.h"
 
+#define MAX_CLIENTS 10
+
+int clients[MAX_CLIENTS];
+int num_clients = 0;
+pthread_mutex_t clients_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 void *handle_client(void *socket_desc);
+void broadcast_message(const char *message, int sender_sock);
 
 int main() {
     int server_fd;
@@ -40,6 +47,10 @@ int main() {
         pthread_t client_thread;
         int *new_sock = malloc(sizeof(int));
         *new_sock = new_socket;
+
+        pthread_mutex_lock(&clients_mutex);
+        clients[num_clients++] = new_socket;
+        pthread_mutex_unlock(&clients_mutex);
 
         if (pthread_create(&client_thread, NULL, handle_client, (void*)new_sock) < 0) {
             error("Could not create thread");
@@ -109,11 +120,38 @@ void *handle_client(void *socket_desc) {
 
         printf("Client: %s\n", buffer);
 
-        send(sock, buffer, strlen(buffer), 0);
+        broadcast_message(buffer, sock);
     }
 
     close(sock);
+
+    pthread_mutex_lock(&clients_mutex);
+    for (int i = 0; i < num_clients; i++) {
+        if (clients[i] == sock) {
+            for (int j = i; j < num_clients - 1; j++) {
+                clients[j] = clients[j + 1];
+            }
+            num_clients--;
+            break;
+        }
+    }
+    pthread_mutex_unlock(&clients_mutex);
+
     pthread_exit(NULL);
 
     return 0;
+}
+
+void broadcast_message(const char *message, int sender_sock) {
+    pthread_mutex_lock(&clients_mutex);
+
+    for (int i = 0; i < num_clients; i++) {
+        if (clients[i] != sender_sock) {
+            if (send(clients[i], message, strlen(message), 0) < 0) {
+                error("Broadcast failed");
+            }
+        }
+    }
+
+    pthread_mutex_unlock(&clients_mutex);
 }
