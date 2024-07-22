@@ -1,257 +1,160 @@
 /*
-// Created by Wouter Jacobs.
+   Created by Wouter Jacobs.
+   THIS IS THE WINDOWS VERSION OF WOUTCLOUD.
+
+   Licensed under: GNU GENERAL PUBLIC LICENSE
+                    Version 3, 29 June 2007
 */
+
+#include <netinet/in.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <pthread.h>
 
 #include "main.h"
 
+int clients[MAX_CLIENTS];
+int num_clients = 0;
+pthread_mutex_t clients_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 int main() {
-    hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-    setTextColorGreen(hConsole);
+    int server_fd;
+    int new_socket;
+    struct sockaddr_in address;
+    int addrlen = sizeof(address);
 
-    if (!initialize_winsock()) return 1;
+    server_fd = createServerSocket(server_fd);
+    if (server_fd <= 0) {
+        return -1;
+    }
 
-    /*
-     * Creation, binding and listening of Sockets.
-     * using: - ipv4
-     *        - TCP protocol
-     * Port = 8081
-     */
-    struct addrinfo address_info;
-    struct addrinfo *address_info_pointer = &address_info;
-    if (!setAddressInfo(&address_info_pointer)) return 1;
+    setSocketOptions(server_fd);
+    setAddressOptions(&address);
+    bindAddressToSocket(server_fd, &address);
 
-    SOCKET listening_socket = createSocket(address_info_pointer);
-    if (listening_socket == INVALID_SOCKET) return 1;
+    if (listen(server_fd, 3) < 0) {
+        error("Listen failed");
+    }
+    printf("Server is listening on port %d\n", PORT);
 
-    if (!bindSocket(listening_socket, address_info_pointer))return 1;
-
-    freeaddrinfo(address_info_pointer);
-
-    if (!setSocketToListen(listening_socket)) return 1;
-
-    /*
-     * Server loop.
-     */
-
-    SOCKET client_socket;
-    char message[DEFAULT_BUFLEN];
-    if (!acceptClient(listening_socket, &client_socket)) return 1;
-    // Receive and send messages
-    HANDLE receiveThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE) handleIncomingMessage, &client_socket, 0, NULL);
     while (1) {
-        printf("\nYou: ");
-        fgets(message, sizeof(message),stdin);
-        send(client_socket, message, strlen(message), 0);
+        new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen);
+        if (new_socket < 0) {
+            error("Accept failed");
+        }
 
-        // Check if user wants to end the chat
-        if (strcmp(message, "exit") == 0) {
-            printf("Chat ended by user\n");
+        pthread_t client_thread;
+        int *new_sock = malloc(sizeof(int));
+        *new_sock = new_socket;
+
+        pthread_mutex_lock(&clients_mutex);
+        clients[num_clients++] = new_socket;
+        pthread_mutex_unlock(&clients_mutex);
+
+        if (pthread_create(&client_thread, NULL, handle_client, (void*)new_sock) < 0) {
+            error("Could not create thread");
+        }
+
+        pthread_detach(client_thread);
+    }
+
+    close(server_fd);
+
+    return 0;
+}
+
+void error(const char *msg) {
+    perror(msg);
+    exit(1);
+}
+
+int createServerSocket(int server_fd) {
+    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
+        error("Socket creation failed");
+        return -1;
+    }
+    printf("Server socket created...\n");
+    return server_fd;
+}
+
+void setSocketOptions(int socket) {
+    int option = 1;
+    if (setsockopt(socket, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &option, sizeof(option))) {
+        error("setsockopt");
+    }
+}
+
+void setAddressOptions(struct sockaddr_in* address) {
+    address->sin_family = AF_INET;
+    address->sin_addr.s_addr = INADDR_ANY;
+    address->sin_port = htons(PORT);
+}
+
+void bindAddressToSocket(int server_fd, struct sockaddr_in* address) {
+    if (bind(server_fd, (struct sockaddr*) address, sizeof(*address)) < 0) {
+        error("Bind failed");
+    }
+}
+
+void *handle_client(void *socket_desc) {
+    int sock = *(int*)socket_desc;
+    free(socket_desc);
+    char buffer[BUFFER_SIZE] = {0};
+    const char *welcome = "Welcome to the chat server! Type 'exit' to disconnect.\n";
+
+    send(sock, welcome, strlen(welcome), 0);
+
+    while (1) {
+        memset(buffer, 0, BUFFER_SIZE);
+
+        int valread = read(sock, buffer, BUFFER_SIZE);
+        if (valread < 0) {
+            error("Read failed");
+        }
+
+        if (strncmp(buffer, "exit", 4) == 0) {
+            printf("Client has disconnected\n");
+            break;
+        }
+
+        printf("Client: %s\n", buffer);
+
+        broadcast_message(buffer, sock);
+    }
+
+    close(sock);
+
+    pthread_mutex_lock(&clients_mutex);
+    for (int i = 0; i < num_clients; i++) {
+        if (clients[i] == sock) {
+            for (int j = i; j < num_clients - 1; j++) {
+                clients[j] = clients[j + 1];
+            }
+            num_clients--;
             break;
         }
     }
+    pthread_mutex_unlock(&clients_mutex);
 
-    // Wait for the receiving thread to finish
-    WaitForSingleObject(receiveThread, INFINITE);
+    pthread_exit(NULL);
 
-
-    /*
-     * Shutting down the server.
-     */
-    if(!shutdownSocket(client_socket)) return 1;
-
-    // Memory cleanup
-    WSACleanup();
-    printf("server successfully shut down");
     return 0;
 }
 
-byte initialize_winsock() {
-    WSADATA wsa_data;
-    int WSAStartup_result;
+void broadcast_message(const char *message, int sender_sock) {
+    pthread_mutex_lock(&clients_mutex);
 
-    WSAStartup_result = WSAStartup(MAKEWORD(2, 2), &wsa_data);
-    if (WSAStartup_result != 0) {
-        setTextColorRed(hConsole);
-        printf("WSAStartup failed: %d\n", WSAStartup_result);
-        return 0;
-    }
-    printf("Winsock2 init successful\n");
-    return 1;
-}
-
-byte setAddressInfo(struct addrinfo **address_info_pointer) {
-    int action_result;
-    struct addrinfo hints;
-    ZeroMemory(&hints, sizeof(hints));
-
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_protocol = IPPROTO_TCP;
-    hints.ai_flags = AI_PASSIVE;
-
-    action_result = getaddrinfo(NULL, DEFAULT_PORT, &hints, address_info_pointer);
-    if (action_result != 0) {
-        setTextColorRed(hConsole);
-        printf("getaddrinfo failed: %d\n", action_result);
-        WSACleanup();
-        return 0;
-    }
-    printf("Address init successful\n");
-    return 1;
-}
-
-SOCKET createSocket(struct addrinfo *address_info) {
-    SOCKET listening_socket;
-
-    listening_socket = socket(address_info->ai_family, address_info->ai_socktype, address_info->ai_protocol);
-    if (listening_socket == INVALID_SOCKET) {
-        setTextColorRed(hConsole);
-        printf("Error at socket(): %d\n", WSAGetLastError());
-        freeaddrinfo(address_info);
-        WSACleanup();
-        return INVALID_SOCKET;
-    }
-    printf("Socket init successful\n");
-    return listening_socket;
-}
-
-byte bindSocket(SOCKET listening_socket, struct addrinfo *address_info) {
-    int action_result;
-
-    action_result = bind(listening_socket, address_info->ai_addr, (int) address_info->ai_addrlen);
-    if (action_result == SOCKET_ERROR) {
-        setTextColorRed(hConsole);
-        printf("bind failed with error: %d\n", WSAGetLastError());
-        closesocket(listening_socket);
-        return 0;
-    } else {
-        printf("Binding socket to address and port successful\n");
-        return 1;
-    }
-}
-
-byte setSocketToListen(SOCKET listening_socket) {
-    int action_result;
-
-    action_result = listen(listening_socket, SOMAXCONN);
-    if (action_result == SOCKET_ERROR) {
-        setTextColorRed(hConsole);
-        printf("listen failed with error: %d\n", WSAGetLastError());
-        closesocket(listening_socket);
-        WSACleanup();
-        return 0;
-    }
-    setTextColorYellow(hConsole);
-    printf("Socket successfully listening...\n");
-    setTextColorGreen(hConsole);
-    return 1;
-}
-
-byte acceptClient(SOCKET listening_socket, SOCKET *client_socket) {
-    // Accepts a single client socket!
-    *client_socket = accept(listening_socket, NULL, NULL);
-    if ((SOCKET) client_socket == INVALID_SOCKET) {
-        setTextColorRed(hConsole);
-        printf("accept failed: %d\n", WSAGetLastError());
-        closesocket(listening_socket);
-        WSACleanup();
-        return 0;
-    }
-    printf("Successfully accepted client connection\n");
-    return 1;
-}
-
-//byte handleClient(SOCKET client_socket) {
-//    //TODO make multithreading for incoming and outgoing messages. Split this function.
-//    resetTextColor(hConsole);
-//
-//    if (!handleIncomingMessage(client_socket)) return 0;
-//    if (!handleSendingMessage(client_socket)) return 0;
-//
-//    // setting the color back to green after communication is done.
-//    setTextColorGreen(hConsole);
-//    return 1;
-//}
-
-byte handleSendingMessage(SOCKET client_socket){
-    int send_result;
-    int send_buflen = DEFAULT_BUFLEN;
-    char *hello_string = "Hello to you too Client, this is WoutCloud speaking";
-
-    send_result = send(client_socket, hello_string, send_buflen, 0); //sending
-
-    if (send_result == SOCKET_ERROR) {
-        setTextColorRed(hConsole);
-        printf("send failed: %d\n", WSAGetLastError());
-        closesocket(client_socket);
-        WSACleanup();
-        return 0;
-    }
-    printf("You: %s\n", hello_string);
-    return 1;
-}
-
-byte handleIncomingMessage(void* socket) {
-    SOCKET ConnectSocket = *((SOCKET*)socket);
-    char recvbuf[DEFAULT_BUFLEN];
-    int recvbuflen = DEFAULT_BUFLEN;
-
-    int iResult;
-    do {
-        iResult = recv(ConnectSocket, recvbuf, recvbuflen, 0);
-        if (iResult > 0) {
-            recvbuf[iResult] = '\0';
-            printf("\nClient: %s", recvbuf);
-        } else if (iResult == 0) {
-            printf("Server closed the connection\n");
-        } else {
-            printf("recv failed with error: %d\n", WSAGetLastError());
+    for (int i = 0; i < num_clients; i++) {
+        if (clients[i] != sender_sock) {
+            if (send(clients[i], message, strlen(message), 0) < 0) {
+                error("Broadcast failed");
+            }
         }
-    } while (iResult > 0);
-
-    return 0;
-}
-
-int getCorrectBytesToSend(char *string) {
-    int extra_byte = 1;
-    return (int) strlen(string) + extra_byte;
-}
-
-byte shutdownSocket(SOCKET client_socket){
-    int action_result;
-
-    action_result = shutdown(client_socket, SD_SEND);
-    if (action_result == SOCKET_ERROR) {
-        setTextColorRed(hConsole);
-        printf("shutting down of socket failed with error: %d\n", WSAGetLastError());
-        closesocket(client_socket);
-        WSACleanup();
-        return 0;
     }
-    action_result = closesocket(client_socket);
-    if (action_result == SOCKET_ERROR) {
-        setTextColorRed(hConsole);
-        printf("closing of socket failed with error: %d\n", WSAGetLastError());
-        closesocket(client_socket);
-        WSACleanup();
-        return 0;
-    }
-    printf("socket terminated successfully\n");
-    return 1;
-}
 
-void setTextColorRed(HANDLE hconsole){
-    SetConsoleTextAttribute(hconsole,FOREGROUND_RED);
-}
-
-void setTextColorGreen(HANDLE hconsole){
-    SetConsoleTextAttribute(hconsole,FOREGROUND_GREEN);
-}
-
-void setTextColorYellow(HANDLE hconsole){
-    SetConsoleTextAttribute(hconsole, FOREGROUND_RED | FOREGROUND_GREEN);
-}
-
-void resetTextColor(HANDLE hconsole){
-    SetConsoleTextAttribute(hconsole, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+    pthread_mutex_unlock(&clients_mutex);
 }
