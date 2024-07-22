@@ -5,19 +5,20 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
+#include <pthread.h>
 
 #include "main.h"
+
+void *handle_client(void *socket_desc);
 
 int main() {
     int server_fd;
     int new_socket;
     struct sockaddr_in address;
     int addrlen = sizeof(address);
-    char buffer[BUFFER_SIZE] = {0};
-    const char *welcome = "Welcome to the chat server! Type 'exit' to disconnect.\n";
 
     server_fd = createServerSocket(server_fd);
-    if(server_fd <= 0){
+    if (server_fd <= 0) {
         return -1;
     }
 
@@ -25,38 +26,28 @@ int main() {
     setAddressOptions(&address);
     bindAddressToSocket(server_fd, &address);
 
-
     if (listen(server_fd, 3) < 0) {
         error("Listen failed");
     }
-//  ##########################################################################################################################
     printf("Server is listening on port %d\n", PORT);
 
-    if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0) {
-        error("Accept failed");
-    }
-
-    send(new_socket, welcome, strlen(welcome), 0);
-
     while (1) {
-        memset(buffer, 0, BUFFER_SIZE);
-
-        int valread = read(new_socket, buffer, BUFFER_SIZE);
-        if (valread < 0) {
-            error("Read failed");
+        new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen);
+        if (new_socket < 0) {
+            error("Accept failed");
         }
 
-        if (strncmp(buffer, "exit", 4) == 0) {
-            printf("Client has disconnected\n");
-            break;
+        pthread_t client_thread;
+        int *new_sock = malloc(sizeof(int));
+        *new_sock = new_socket;
+
+        if (pthread_create(&client_thread, NULL, handle_client, (void*)new_sock) < 0) {
+            error("Could not create thread");
         }
 
-        printf("Client: %s\n", buffer);
-
-        send(new_socket, buffer, strlen(buffer), 0);
+        pthread_detach(client_thread); // To automatically reclaim thread resources
     }
 
-    close(new_socket);
     close(server_fd);
 
     return 0;
@@ -67,8 +58,7 @@ void error(const char *msg) {
     exit(1);
 }
 
-int createServerSocket(int server_fd )
-{
+int createServerSocket(int server_fd) {
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
         error("Socket creation failed");
         return -1;
@@ -94,4 +84,36 @@ void bindAddressToSocket(int server_fd, struct sockaddr_in* address) {
     if (bind(server_fd, (struct sockaddr*) address, sizeof(*address)) < 0) {
         error("Bind failed");
     }
+}
+
+void *handle_client(void *socket_desc) {
+    int sock = *(int*)socket_desc;
+    free(socket_desc);
+    char buffer[BUFFER_SIZE] = {0};
+    const char *welcome = "Welcome to the chat server! Type 'exit' to disconnect.\n";
+
+    send(sock, welcome, strlen(welcome), 0);
+
+    while (1) {
+        memset(buffer, 0, BUFFER_SIZE);
+
+        int valread = read(sock, buffer, BUFFER_SIZE);
+        if (valread < 0) {
+            error("Read failed");
+        }
+
+        if (strncmp(buffer, "exit", 4) == 0) {
+            printf("Client has disconnected\n");
+            break;
+        }
+
+        printf("Client: %s\n", buffer);
+
+        send(sock, buffer, strlen(buffer), 0);
+    }
+
+    close(sock);
+    pthread_exit(NULL);
+
+    return 0;
 }
