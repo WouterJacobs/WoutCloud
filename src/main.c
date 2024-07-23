@@ -22,6 +22,19 @@ int clients[MAX_CLIENTS];
 int num_clients = 0;
 pthread_mutex_t clients_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+struct user {
+    char username[20];
+};
+
+int setUsername(char* username, struct user* user) {
+    if (strlen(username) > 20) {
+    return -1;
+    }
+
+    strcpy(user->username, username);
+    return 1;
+}
+
 int main() {
     int server_fd;
     int new_socket;
