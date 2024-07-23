@@ -28,15 +28,6 @@ struct user {
 
 struct user users[MAX_USERS];
 
-int setUsername(char* username, struct user* user) {
-    if (strlen(username) > 20) {
-    return -1;
-    }
-
-    strcpy(user->username, username);
-    return 1;
-}
-
 int main() {
     int server_fd;
     int new_socket;
@@ -215,4 +206,13 @@ void setSocketToListen(int server_fd, int totalPendingRequests) {
         error("Listen failed");
     }
     printf("Server is listening on port %d\n", PORT);
+}
+
+int setUsername(char* username, struct user* user){
+    if (strlen(username) > 20) {
+    return -1;
+    }
+
+    strcpy(user->username, username);
+    return 1;
 }
