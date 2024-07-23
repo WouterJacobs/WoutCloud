@@ -23,7 +23,7 @@ pthread_mutex_t clients_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 struct user {
     char username[20];
-    int clientSocket;
+    int client_socket;
 };
 
 struct user users[MAX_USERS];
@@ -33,17 +33,17 @@ int main() {
     int new_socket;
     struct sockaddr_in address;
     int addrlen = sizeof(address);
-    int totalPendingRequests = 5;
+    int total_pending_requests = 5;
 
-    server_fd = createServerSocket(server_fd);
+    server_fd = create_server_socket(server_fd);
     if (server_fd <= 0) {
         return -1;
     }
 
-    setSocketOptions(server_fd);
-    setAddressOptions(&address);
-    bindAddressToSocket(server_fd, &address);
-    setSocketToListen(server_fd, totalPendingRequests);
+    set_socket_options(server_fd);
+    set_address_options(&address);
+    bind_address_to_socket(server_fd, &address);
+    set_socket_to_listen(server_fd, total_pending_requests);
 
     pthread_t command_thread;
     if (pthread_create(&command_thread, NULL, handle_server_commands, NULL) < 0) {
@@ -77,7 +77,7 @@ void error(const char *msg) {
     exit(1);
 }
 
-int createServerSocket(int server_fd) {
+int create_server_socket(int server_fd) {
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
         error("Socket creation failed");
         return -1;
@@ -86,33 +86,40 @@ int createServerSocket(int server_fd) {
     return server_fd;
 }
 
-void setSocketOptions(int socket) {
+void set_socket_options(int _oocket) {
     int option = 1;
     if (setsockopt(socket, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &option, sizeof(option))) {
         error("setsockopt");
     }
 }
 
-void setAddressOptions(struct sockaddr_in* address) {
+void set_address_options(struct sockaddr_in* address) {
     address->sin_family = AF_INET;
     address->sin_addr.s_addr = INADDR_ANY;
     address->sin_port = htons(PORT);
 }
 
-void bindAddressToSocket(int server_fd, struct sockaddr_in* address) {
+void bind_address_to_socket(int server_fd, struct sockaddr_in* address) {
     if (bind(server_fd, (struct sockaddr*) address, sizeof(*address)) < 0) {
         error("Bind failed");
     }
 }
 
+void set_socket_to_listen(int server_fd, int total_pending_requests) {
+    if (listen(server_fd, 3) < 0) {
+        error("Listen failed");
+    }
+    printf("Server is listening on port %d\n", PORT);
+}
+
 void *handle_client(void *socket_desc) {
-    struct user clientuser;
+    struct user client_user;
 
     int sock = *(int*)socket_desc; 
-    clientuser.clientSocket = sock;
+    client_user.client_socket = sock;
 
     pthread_mutex_lock(&clients_mutex);
-    users[num_clients++] = clientuser;
+    users[num_clients++] = client_user;
     pthread_mutex_unlock(&clients_mutex);
 
     free(socket_desc);
@@ -136,8 +143,8 @@ void *handle_client(void *socket_desc) {
             buffer[valread - 1] = '\0';
         }
 
-        if (setUsername(buffer, &clientuser) == 1) {
-            printf("Username set successfully: %s\n", clientuser.username);
+        if (set_username(buffer, &client_user) == 1) {
+            printf("Username set successfully: %s\n", client_user.username);
             break;
         } else {
             const char *error_msg = "Failed to set username. Username too long. Please try again: ";
@@ -158,18 +165,18 @@ void *handle_client(void *socket_desc) {
             break;
         }
 
-        printf("%s: %s\n", clientuser.username, buffer);
+        printf("%s: %s\n", client_user.username, buffer);
 
-        broadcast_message(clientuser.username, buffer, sock);
+        broadcast_message(client_user.username, buffer, sock);
     }
 
     close(sock);
 
     pthread_mutex_lock(&clients_mutex);
     for (int i = 0; i < num_clients; i++) {
-        if (users[i].clientSocket == sock) {
+        if (users[i]._s == sock) {
             for (int j = i; j < num_clients - 1; j++) {
-                users[j].clientSocket = users[j + 1].clientSocket;
+                users[j]._s = users[j + 1]._s;
             }
             num_clients--;
             break;
@@ -186,7 +193,7 @@ void broadcast_message(const char* sender, const char* message, int sender_sock)
     pthread_mutex_lock(&clients_mutex);
 
     for (int i = 0; i < num_clients; i++) {
-        if (users[i].clientSocket != sender_sock) {
+        if (users[i]._s != sender_sock) {
             int combined_len = strlen(sender) + strlen(message) + 2; // +2 for colon and null terminator
 
             char *combined_message = (char *)malloc(combined_len);
@@ -195,7 +202,7 @@ void broadcast_message(const char* sender, const char* message, int sender_sock)
             strcat(combined_message, ": ");
             strcat(combined_message, message);
 
-            if (send(users[i].clientSocket, combined_message, combined_len, 0) < 0) {
+            if (send(users[i]._s, combined_message, combined_len, 0) < 0) {
                 perror("Broadcast failed");
             }
 
@@ -206,14 +213,7 @@ void broadcast_message(const char* sender, const char* message, int sender_sock)
     pthread_mutex_unlock(&clients_mutex);
 }
 
-void setSocketToListen(int server_fd, int totalPendingRequests) {
-    if (listen(server_fd, 3) < 0) {
-        error("Listen failed");
-    }
-    printf("Server is listening on port %d\n", PORT);
-}
-
-int setUsername(char* username, struct user* user){
+int set_username(char* username, struct user* user){
     if (strlen(username) > 20) {
     return -1;
     }
@@ -240,7 +240,7 @@ void broadcast_server_message(const char* message) {
     pthread_mutex_lock(&clients_mutex);
 
     for (int i = 0; i < num_clients; i++) {
-        if (send(users[i].clientSocket, message, strlen(message), 0) < 0) {
+        if (send(users[i]._s, message, strlen(message), 0) < 0) {
             perror("Server broadcast failed");
         }
     }
