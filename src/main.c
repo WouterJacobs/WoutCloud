@@ -21,11 +21,19 @@ int clients[MAX_CLIENTS];
 int num_clients = 0;
 pthread_mutex_t clients_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+void setSocketToListen(int server_fd, int totalPendingRequests) {
+    if (listen(server_fd, 3) < 0) {
+        error("Listen failed");
+    }
+    printf("Server is listening on port %d\n", PORT);
+}
+
 int main() {
     int server_fd;
     int new_socket;
     struct sockaddr_in address;
     int addrlen = sizeof(address);
+    int totalPendingRequests = 5;
 
     server_fd = createServerSocket(server_fd);
     if (server_fd <= 0) {
@@ -35,12 +43,8 @@ int main() {
     setSocketOptions(server_fd);
     setAddressOptions(&address);
     bindAddressToSocket(server_fd, &address);
-
-    if (listen(server_fd, 3) < 0) {
-        error("Listen failed");
-    }
-    printf("Server is listening on port %d\n", PORT);
-
+    setSocketToListen(server_fd, totalPendingRequests);
+    
     while (1) {
         new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen);
         if (new_socket < 0) {
