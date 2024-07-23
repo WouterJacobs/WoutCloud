@@ -13,15 +13,15 @@ struct user;
 
 // Methods
 void error(const char *msg);
-int createServerSocket(int server_fd );
-void setSocketOptions(int socket);
-void setAddressOptions(struct sockaddr_in* address);
-void bindAddressToSocket(int server_fd, struct sockaddr_in* address);
-void setSocketToListen(int server_fd, int totalPendingRequests);
+int create_server_socket(int server_fd );
+void set_socket_options(int socket);
+void set_address_options(struct sockaddr_in* address);
+void bind_address_to_socket(int server_fd, struct sockaddr_in* address);
+void set_socket_to_listen(int server_fd, int total_pending_requests);
 
 void *handle_client(void *socket_desc);
 void broadcast_message(const char* sender, const char* message, int sender_sock);
 void *handle_server_commands(void* arg);
 void broadcast_server_message(const char* message);
 
-int setUsername(char* username, struct user* user);
+int set_username(char* username, struct user* user);
