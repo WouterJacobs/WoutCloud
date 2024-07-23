@@ -28,32 +28,6 @@ struct user {
 
 struct user users[MAX_USERS];
 
-void broadcast_server_message(const char* message) {
-    pthread_mutex_lock(&clients_mutex);
-
-    for (int i = 0; i < num_clients; i++) {
-        if (send(users[i].clientSocket, message, strlen(message), 0) < 0) {
-            perror("Server broadcast failed");
-        }
-    }
-
-    pthread_mutex_unlock(&clients_mutex);
-}
-
-void *handle_server_commands(void *arg) {
-    char buffer[BUFFER_SIZE];
-    while (1) {
-        fgets(buffer, BUFFER_SIZE, stdin);
-        if (strncmp(buffer, "shutdown", 8) == 0) {
-            const char* shutdown_message = "Server is shutting down. Goodbye!\n";
-            broadcast_server_message(shutdown_message);
-            exit(0);
-        } else {
-            broadcast_server_message(buffer);
-        }
-    }
-}
-
 int main() {
     int server_fd;
     int new_socket;
@@ -247,3 +221,31 @@ int setUsername(char* username, struct user* user){
     strcpy(user->username, username);
     return 1;
 }
+
+void *handle_server_commands(void* arg) {
+    char buffer[BUFFER_SIZE];
+    while (1) {
+        fgets(buffer, BUFFER_SIZE, stdin);
+        if (strncmp(buffer, "shutdown", 8) == 0) {
+            const char* shutdown_message = "Server is shutting down. Goodbye!\n";
+            broadcast_server_message(shutdown_message);
+            exit(0);
+        } else {
+            broadcast_server_message(buffer);
+        }
+    }
+}
+
+void broadcast_server_message(const char* message) {
+    pthread_mutex_lock(&clients_mutex);
+
+    for (int i = 0; i < num_clients; i++) {
+        if (send(users[i].clientSocket, message, strlen(message), 0) < 0) {
+            perror("Server broadcast failed");
+        }
+    }
+
+    pthread_mutex_unlock(&clients_mutex);
+}
+
+
