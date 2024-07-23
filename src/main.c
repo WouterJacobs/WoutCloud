@@ -28,6 +28,18 @@ struct user {
 
 struct user users[MAX_USERS];
 
+void broadcast_server_message(const char* message) {
+    pthread_mutex_lock(&clients_mutex);
+
+    for (int i = 0; i < num_clients; i++) {
+        if (send(users[i].clientSocket, message, strlen(message), 0) < 0) {
+            perror("Server broadcast failed");
+        }
+    }
+
+    pthread_mutex_unlock(&clients_mutex);
+}
+
 int main() {
     int server_fd;
     int new_socket;
