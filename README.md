@@ -17,7 +17,7 @@ This project is licensed under the GNU General Public License Version 3.
 ## How to run
 1) Clone this repository
 ```git clone https://github.com/WouterJacobs/WoutCloud.git```
-2) go into the /src folder and compile the code
+2) Go into the /src folder and compile the code
 ```gcc -o server main.c``` or ```gcc -pthread -o server main.c```
 3) Run the program
 ```./server```
