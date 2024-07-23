@@ -15,5 +15,5 @@ void setSocketOptions(int socket);
 void setAddressOptions(struct sockaddr_in* address);
 void bindAddressToSocket(int server_fd, struct sockaddr_in* address);
 void *handle_client(void *socket_desc);
-void broadcast_message(const char *message, int sender_sock);
+void broadcast_message(const char* sender, const char* message, int sender_sock);
 void setSocketToListen(int server_fd, int totalPendingRequests);

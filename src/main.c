@@ -122,9 +122,32 @@ void *handle_client(void *socket_desc) {
     free(socket_desc);
 
     char buffer[BUFFER_SIZE] = {0};
-    const char *welcome = "Welcome to the chat server! Type 'exit' to disconnect.\n";
+    const char *welcome = "Welcome to the chat server! Type 'exit' to disconnect.\nPlease enter your username: ";
 
     send(sock, welcome, strlen(welcome), 0);
+
+    while (1) {
+        memset(buffer, 0, BUFFER_SIZE);
+
+        int valread = read(sock, buffer, BUFFER_SIZE);
+        if (valread < 0) {
+            perror("Read failed");
+            close(sock);
+            return NULL;
+        }
+
+        if (buffer[valread - 1] == '\n') {
+            buffer[valread - 1] = '\0';
+        }
+
+        if (setUsername(buffer, &clientuser) == 1) {
+            printf("Username set successfully: %s\n", clientuser.username);
+            break;
+        } else {
+            const char *error_msg = "Failed to set username. Username too long. Please try again: ";
+            send(sock, error_msg, strlen(error_msg), 0);
+        }
+    }
 
     while (1) {
         memset(buffer, 0, BUFFER_SIZE);
@@ -139,9 +162,9 @@ void *handle_client(void *socket_desc) {
             break;
         }
 
-        printf("Client: %s\n", buffer);
+        printf("%s: %s\n", clientuser.username, buffer);
 
-        broadcast_message(buffer, sock);
+        broadcast_message(clientuser.username, buffer, sock);
     }
 
     close(sock);
@@ -163,14 +186,24 @@ void *handle_client(void *socket_desc) {
     return 0;
 }
 
-void broadcast_message(const char *message, int sender_sock) {
+void broadcast_message(const char* sender, const char* message, int sender_sock) {
     pthread_mutex_lock(&clients_mutex);
 
     for (int i = 0; i < num_clients; i++) {
         if (users[i].clientSocket != sender_sock) {
-            if (send(users[i].clientSocket, message, strlen(message), 0) < 0) {
-                error("Broadcast failed");
+            int combined_len = strlen(sender) + strlen(message) + 2; // +2 for colon and null terminator
+
+            char *combined_message = (char *)malloc(combined_len);
+
+            strcpy(combined_message, sender);
+            strcat(combined_message, ": ");
+            strcat(combined_message, message);
+
+            if (send(users[i].clientSocket, combined_message, combined_len, 0) < 0) {
+                perror("Broadcast failed");
             }
+
+            free(combined_message);
         }
     }
 
