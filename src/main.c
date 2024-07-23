@@ -18,13 +18,15 @@
 
 #include "main.h"
 
-int clients[MAX_CLIENTS];
 int num_clients = 0;
 pthread_mutex_t clients_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 struct user {
     char username[20];
+    int clientSocket;
 };
+
+struct user users[MAX_USERS];
 
 int setUsername(char* username, struct user* user) {
     if (strlen(username) > 20) {
@@ -61,10 +63,6 @@ int main() {
         pthread_t client_thread;
         int *new_sock = malloc(sizeof(int));
         *new_sock = new_socket;
-
-        pthread_mutex_lock(&clients_mutex);
-        clients[num_clients++] = new_socket;
-        pthread_mutex_unlock(&clients_mutex);
 
         if (pthread_create(&client_thread, NULL, handle_client, (void*)new_sock) < 0) {
             error("Could not create thread");
@@ -112,8 +110,17 @@ void bindAddressToSocket(int server_fd, struct sockaddr_in* address) {
 }
 
 void *handle_client(void *socket_desc) {
-    int sock = *(int*)socket_desc;
+    struct user clientuser;
+
+    int sock = *(int*)socket_desc; 
+    clientuser.clientSocket = sock;
+
+    pthread_mutex_lock(&clients_mutex);
+    users[num_clients++] = clientuser;
+    pthread_mutex_unlock(&clients_mutex);
+
     free(socket_desc);
+
     char buffer[BUFFER_SIZE] = {0};
     const char *welcome = "Welcome to the chat server! Type 'exit' to disconnect.\n";
 
@@ -141,9 +148,9 @@ void *handle_client(void *socket_desc) {
 
     pthread_mutex_lock(&clients_mutex);
     for (int i = 0; i < num_clients; i++) {
-        if (clients[i] == sock) {
+        if (users[i].clientSocket == sock) {
             for (int j = i; j < num_clients - 1; j++) {
-                clients[j] = clients[j + 1];
+                users[j].clientSocket = users[j + 1].clientSocket;
             }
             num_clients--;
             break;
@@ -160,8 +167,8 @@ void broadcast_message(const char *message, int sender_sock) {
     pthread_mutex_lock(&clients_mutex);
 
     for (int i = 0; i < num_clients; i++) {
-        if (clients[i] != sender_sock) {
-            if (send(clients[i], message, strlen(message), 0) < 0) {
+        if (users[i].clientSocket != sender_sock) {
+            if (send(users[i].clientSocket, message, strlen(message), 0) < 0) {
                 error("Broadcast failed");
             }
         }

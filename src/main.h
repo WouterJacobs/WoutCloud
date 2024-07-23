@@ -6,7 +6,7 @@
 // Definitions
 #define PORT 8080
 #define BUFFER_SIZE 1024
-#define MAX_CLIENTS 10
+#define MAX_USERS 10
 
 // Methods
 void error(const char *msg);
