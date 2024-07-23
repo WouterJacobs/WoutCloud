@@ -86,7 +86,7 @@ int create_server_socket(int server_fd) {
     return server_fd;
 }
 
-void set_socket_options(int _oocket) {
+void set_socket_options(int socket) {
     int option = 1;
     if (setsockopt(socket, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &option, sizeof(option))) {
         error("setsockopt");
@@ -174,9 +174,9 @@ void *handle_client(void *socket_desc) {
 
     pthread_mutex_lock(&clients_mutex);
     for (int i = 0; i < num_clients; i++) {
-        if (users[i]._s == sock) {
+        if (users[i].client_socket == sock) {
             for (int j = i; j < num_clients - 1; j++) {
-                users[j]._s = users[j + 1]._s;
+                users[j].client_socket = users[j + 1].client_socket;
             }
             num_clients--;
             break;
@@ -193,7 +193,7 @@ void broadcast_message(const char* sender, const char* message, int sender_sock)
     pthread_mutex_lock(&clients_mutex);
 
     for (int i = 0; i < num_clients; i++) {
-        if (users[i]._s != sender_sock) {
+        if (users[i].client_socket != sender_sock) {
             int combined_len = strlen(sender) + strlen(message) + 2; // +2 for colon and null terminator
 
             char *combined_message = (char *)malloc(combined_len);
@@ -202,7 +202,7 @@ void broadcast_message(const char* sender, const char* message, int sender_sock)
             strcat(combined_message, ": ");
             strcat(combined_message, message);
 
-            if (send(users[i]._s, combined_message, combined_len, 0) < 0) {
+            if (send(users[i].client_socket, combined_message, combined_len, 0) < 0) {
                 perror("Broadcast failed");
             }
 
@@ -240,7 +240,7 @@ void broadcast_server_message(const char* message) {
     pthread_mutex_lock(&clients_mutex);
 
     for (int i = 0; i < num_clients; i++) {
-        if (send(users[i]._s, message, strlen(message), 0) < 0) {
+        if (send(users[i].client_socket, message, strlen(message), 0) < 0) {
             perror("Server broadcast failed");
         }
     }
