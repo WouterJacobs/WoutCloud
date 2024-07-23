@@ -17,8 +17,11 @@ int createServerSocket(int server_fd );
 void setSocketOptions(int socket);
 void setAddressOptions(struct sockaddr_in* address);
 void bindAddressToSocket(int server_fd, struct sockaddr_in* address);
+void setSocketToListen(int server_fd, int totalPendingRequests);
+
 void *handle_client(void *socket_desc);
 void broadcast_message(const char* sender, const char* message, int sender_sock);
-void setSocketToListen(int server_fd, int totalPendingRequests);
+void *handle_server_commands(void* arg);
+void broadcast_server_message(const char* message);
 
 int setUsername(char* username, struct user* user);

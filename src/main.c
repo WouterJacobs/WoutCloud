@@ -45,6 +45,11 @@ int main() {
     bindAddressToSocket(server_fd, &address);
     setSocketToListen(server_fd, totalPendingRequests);
 
+    pthread_t command_thread;
+    if (pthread_create(&command_thread, NULL, handle_server_commands, NULL) < 0) {
+        error("Could not create server command thread");
+    }
+
     while (1) {
         new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen);
         if (new_socket < 0) {
@@ -216,3 +221,31 @@ int setUsername(char* username, struct user* user){
     strcpy(user->username, username);
     return 1;
 }
+
+void *handle_server_commands(void* arg) {
+    char buffer[BUFFER_SIZE];
+    while (1) {
+        fgets(buffer, BUFFER_SIZE, stdin);
+        if (strncmp(buffer, "shutdown", 8) == 0) {
+            const char* shutdown_message = "Server is shutting down. Goodbye!\n";
+            broadcast_server_message(shutdown_message);
+            exit(0);
+        } else {
+            broadcast_server_message(buffer);
+        }
+    }
+}
+
+void broadcast_server_message(const char* message) {
+    pthread_mutex_lock(&clients_mutex);
+
+    for (int i = 0; i < num_clients; i++) {
+        if (send(users[i].clientSocket, message, strlen(message), 0) < 0) {
+            perror("Server broadcast failed");
+        }
+    }
+
+    pthread_mutex_unlock(&clients_mutex);
+}
+
+
