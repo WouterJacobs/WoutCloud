@@ -32,7 +32,7 @@ int main() {
     int server_fd;
     int new_socket;
     struct sockaddr_in address;
-    int addrlen = sizeof(address);
+    int address_lenght = sizeof(address);
     int total_pending_requests = 5;
 
     server_fd = create_server_socket(server_fd);
@@ -51,7 +51,7 @@ int main() {
     }
 
     while (1) {
-        new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen);
+        new_socket = accept(server_fd, (struct sockaddr *) &address, (socklen_t * ) & address_lenght);
         if (new_socket < 0) {
             error("Accept failed");
         }
@@ -60,7 +60,7 @@ int main() {
         int *new_sock = malloc(sizeof(int));
         *new_sock = new_socket;
 
-        if (pthread_create(&client_thread, NULL, handle_client, (void*)new_sock) < 0) {
+        if (pthread_create(&client_thread, NULL, handle_client, (void *) new_sock) < 0) {
             error("Could not create thread");
         }
 
@@ -93,14 +93,14 @@ void set_socket_options(int socket) {
     }
 }
 
-void set_address_options(struct sockaddr_in* address) {
+void set_address_options(struct sockaddr_in *address) {
     address->sin_family = AF_INET;
     address->sin_addr.s_addr = INADDR_ANY;
     address->sin_port = htons(PORT);
 }
 
-void bind_address_to_socket(int server_fd, struct sockaddr_in* address) {
-    if (bind(server_fd, (struct sockaddr*) address, sizeof(*address)) < 0) {
+void bind_address_to_socket(int server_fd, struct sockaddr_in *address) {
+    if (bind(server_fd, (struct sockaddr *) address, sizeof(*address)) < 0) {
         error("Bind failed");
     }
 }
@@ -115,7 +115,7 @@ void set_socket_to_listen(int server_fd, int total_pending_requests) {
 void *handle_client(void *socket_desc) {
     struct user client_user;
 
-    int sock = *(int*)socket_desc; 
+    int sock = *(int *) socket_desc;
     client_user.client_socket = sock;
 
     pthread_mutex_lock(&clients_mutex);
@@ -189,14 +189,14 @@ void *handle_client(void *socket_desc) {
     return 0;
 }
 
-void broadcast_message(const char* sender, const char* message, int sender_sock) {
+void broadcast_message(const char *sender, const char *message, int sender_sock) {
     pthread_mutex_lock(&clients_mutex);
 
     for (int i = 0; i < num_clients; i++) {
         if (users[i].client_socket != sender_sock) {
             int combined_len = strlen(sender) + strlen(message) + 2; // +2 for colon and null terminator
 
-            char *combined_message = (char *)malloc(combined_len);
+            char *combined_message = (char *) malloc(combined_len);
 
             strcpy(combined_message, sender);
             strcat(combined_message, ": ");
@@ -213,21 +213,21 @@ void broadcast_message(const char* sender, const char* message, int sender_sock)
     pthread_mutex_unlock(&clients_mutex);
 }
 
-int set_username(char* username, struct user* user){
+int set_username(char *username, struct user *user) {
     if (strlen(username) > 20) {
-    return -1;
+        return -1;
     }
 
     strcpy(user->username, username);
     return 1;
 }
 
-void *handle_server_commands(void* arg) {
+void *handle_server_commands(void *arg) {
     char buffer[BUFFER_SIZE];
     while (1) {
         fgets(buffer, BUFFER_SIZE, stdin);
         if (strncmp(buffer, "shutdown", 8) == 0) {
-            const char* shutdown_message = "Server is shutting down. Goodbye!\n";
+            const char *shutdown_message = "Server is shutting down. Goodbye!\n";
             broadcast_server_message(shutdown_message);
             exit(0);
         } else {
@@ -236,7 +236,7 @@ void *handle_server_commands(void* arg) {
     }
 }
 
-void broadcast_server_message(const char* message) {
+void broadcast_server_message(const char *message) {
     pthread_mutex_lock(&clients_mutex);
 
     for (int i = 0; i < num_clients; i++) {
