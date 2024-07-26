@@ -53,7 +53,7 @@ int main() {
     while (1) {
         new_socket = accept(server_fd, (struct sockaddr *) &address, (socklen_t * ) & address_lenght);
         if (new_socket < 0) {
-            error("Accept failed");
+            error("Accepting of socket failed");
         }
 
         pthread_t client_thread;
@@ -89,7 +89,7 @@ int create_server_socket(int server_fd) {
 void set_socket_options(int socket) {
     int option = 1;
     if (setsockopt(socket, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &option, sizeof(option))) {
-        error("setsockopt");
+        error("Setting options to socket failed");
     }
 }
 
