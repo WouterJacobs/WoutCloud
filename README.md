@@ -12,7 +12,7 @@ This project is licensed under the GNU General Public License Version 3.
 - Broadcasts messages from one client to all other connected clients.
 - Handles basic client-server communication over TCP sockets.
 - Uses mutexes to handle concurrent access to shared resources.
-- new features coming soon...
+- new features coming soon ...
 
 ## How to run
 1) Clone this repository
